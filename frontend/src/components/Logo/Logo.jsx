@@ -4,7 +4,7 @@
 
 const Logo = () => {
     return <div>
-        <div style={{fontFamily: "cursive", fontSize: "50px", fontWeight: "bold"}}>
+        <div style={{fontFamily: "cursive", fontSize: "40px", fontWeight: "bold"}}>
             <span style={{color: "#3788db"}}>B</span>
             <span style={{color: "#3788db"}}>B</span>
             <span style={{color: "#573e8a"}}>K</span>

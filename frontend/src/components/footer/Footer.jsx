@@ -2,7 +2,8 @@
 
 
 
-
+import Logo from "../Logo/Logo"
+import { Link } from "react-router-dom"
 const Footer = () => {
     return <div>
         <footer className="text-center text-lg-start text-muted" style={{backgroundColor: "black"}}>
@@ -46,9 +47,9 @@ const Footer = () => {
       
         <div className="col-12 col-lg-3 col-sm-12">
        
-          <a href="https://mdbootstrap.com/" target="_blank" className="ms-md-2">
-            <img src="https://mdbootstrap.com/img/logo/mdb-transaprent-noshadows.png" height="35" />
-          </a>
+            {/* <img src="https://mdbootstrap.com/img/logo/mdb-transaprent-noshadows.png" height="35" /> */}
+            <Logo />
+  
           <p className="mt-3">
             © 2023 Copyright: MDBootstrap.com.
           </p>

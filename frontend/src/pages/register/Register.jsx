@@ -2,6 +2,7 @@
 
 
 import Logo from "../../components/Logo/Logo"
+import { Link } from "react-router-dom"
 const Register = () => {
     return <div>
         {/* <section class="vh-100 gradient-custom">
@@ -61,7 +62,8 @@ const Register = () => {
                 <form>
 
                   <div class="d-flex align-items-center mb-3 pb-1 ">
-                    <Logo />
+                  <Link to="/" style={{textDecoration: "none"}}><Logo /></Link>
+                    
                   </div>
 
                   <h3 class="fw-normal pb-3" style={{letterSpacing: "1px"}}>Register</h3>
@@ -81,12 +83,12 @@ const Register = () => {
                   </div>
 
                   <div class="pt-1 mb-">
-                    <button style={{backgroundColor: "purple", color: "white"}} data-mdb-button-init data-mdb-ripple-init class="btn btn-lg btn-block" type="button">Login</button>
+                    <button style={{backgroundColor: "purple", color: "white"}} data-mdb-button-init data-mdb-ripple-init class="btn btn-lg btn-block" type="button">Register</button>
                   </div>
 
                   <a class="small text-muted" href="#!">Forgot password?</a>
-                  <p class="" style={{color: "#393f81"}}>Don't have an account? <a href="#!"
-                      style={{color: "#393f81"}}>Register here</a></p>
+                  <p class="" style={{color: "#393f81"}}>Already have an account? <Link to="/login"
+                      style={{color: "#393f81"}}>Login</Link></p>
                 </form>
 
               </div>

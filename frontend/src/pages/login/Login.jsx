@@ -3,6 +3,7 @@
 
 import "./login.css"
 import Logo from "../../components/Logo/Logo"
+import { Link } from "react-router-dom"
 const Login = () => {
     return <div>
         {/* <section class="h-100 gradient-form">
@@ -80,7 +81,7 @@ const Login = () => {
                 <form>
 
                   <div class="d-flex align-items-center mb-3 pb-1">
-                  <Logo />
+                  <Link to="/" style={{textDecoration: "none"}}><Logo /></Link>
                   </div>
 
                   <h3 class="fw-normal pb-3" style={{letterSpacing: "1px"}}>Login</h3>
@@ -100,8 +101,8 @@ const Login = () => {
                   </div>
 
                   <a class="small text-muted" href="#!">Forgot password?</a>
-                  <p class="mb-5 pb-lg-2" style={{color: "#393f81"}}>Don't have an account? <a href="#!"
-                      style={{color: "#393f81"}}>Register here</a></p>
+                  <p class="mb-5 pb-lg-2" style={{color: "#393f81"}}>Don't have an account? <Link to="/register"
+                      style={{color: "#393f81"}}>Register here</Link></p>
                   <a href="#!" class="small text-muted">Terms of use.</a>
                   <a href="#!" class="small text-muted">Privacy policy</a>
                 </form>
