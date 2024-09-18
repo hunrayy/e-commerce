@@ -7,8 +7,12 @@ import { CartContext } from "./CartContext";
 import { CurrencyContext } from "../../components/all_context/CurrencyContext";
 import CartTotal from "./CartTotal";
 import EmptyCart from '../../components/emptyCart/EmptyCart';
-
+import { useAuth } from "../../components/AuthContext/AuthContext";
+import { useNavigate } from "react-router-dom";
 const Cart = () => {
+  const use_auth = useAuth()
+  const navigate = useNavigate()
+  const [isLoading, setIsLoading] = useState(true)
   const { selectedCurrency, convertCurrency, currencySymbols } = useContext(CurrencyContext);
   const { cartProducts, addToCart, updateCartItemQuantity } = useContext(CartContext);
   const [allCartItems, setAllCartItems] = useState({ products: [] });
@@ -18,7 +22,14 @@ const Cart = () => {
     const storedItems = JSON.parse(localStorage.getItem("cart_items")) || [];
     setAllCartItems({ products: storedItems });
   }, [cartProducts.products]);
-
+  useEffect(() => {
+    if (use_auth.user.is_user_logged && use_auth.user.user.is_an_admin && use_auth.user.user.user === "admin") {
+        navigate(`/admin/dashboard/${use_auth.user.user.token}`);
+        setIsLoading(false)
+    } else {
+        setIsLoading(false); // Allow page to render for non-admin users
+    }
+  }, [use_auth.user, navigate]);
   const handleRemoveFromCart = (product) => {
     addToCart(product);
     window.scrollTo(0, 0);
@@ -38,9 +49,9 @@ const Cart = () => {
   };
 
   const currencySymbol = currencySymbols[selectedCurrency];
-
-  return (
-    <div className="cart-page-container">
+  if (isLoading) {
+    return null; // Optionally, you can return a loader here
+  }else{ return <div className="cart-page-container">
       <Navbar />
       <div className="breadcrumb-container">
         <div className="container py-4">
@@ -63,36 +74,48 @@ const Cart = () => {
                 <div className="m-4">
                   <h4 className="card-title mb-4">Your shopping cart</h4>
                   {allCartItems.products.slice().reverse().map((each_item) => {
+                    console.log(each_item)
                     let convertedPrice = convertCurrency(each_item.price, 'NGN', selectedCurrency);
                     convertedPrice = Number(convertedPrice);
                     return (
                       <div key={each_item.id}>
-                        <div className="row gy-3 mb-4">
-                          <div className="col-lg-5">
-                            <div className="d-flex">
-                              <img src={each_item.img} className="border rounded me-3" style={{ width: "100px", height: "130px" }} />
-                              <div>
-                                <a href="#" className="nav-link">{each_item.name}</a>
-                                <p className="text-muted px-3">{each_item.description}</p>
-                              </div>
+                      <div className="cart-products-wrapper">
+                        <div className="col-lg-5">
+                          <div className="d-flex">
+                            <img src={each_item.img} className="border rounded me-3" style={{ width: "100px", height: "130px" }} />
+                            <div>
+                              <a href="#" className="nav-link">{each_item.name}</a>
+                              <p className="text-muted ">{each_item.description}</p>
+                              {/* <p> */}
+                                <small><b>Length:</b> &nbsp;
+                                {each_item.lengthPicked}
+                                </small>
+
+                              {/* </p> */}
                             </div>
                           </div>
-                          <div className="col-lg-4 d-flex flex-row flex-lg-column text-nowrap">
+                        </div>
+                        {/* col-lg-4 d-flex flex-row flex-lg-column text-nowrap */}
+                        <div style={{display: "flex", justifyContent: "space-between", width: "100%"}}>
+                        <div style={{display: "flex"}}>
+                          <div className="cart-text-wrapper" >
                             <div className="d-flex align-items-center" style={{ gap: "10px" }}>
                               <button className="cart-increase-decrease-btn" onClick={() => decreaseButton(each_item)}><i className="fa-solid fa-minus"></i></button>
                               <span>{each_item.quantity}</span>
                               <button className="cart-increase-decrease-btn" onClick={() => increaseButton(each_item)}><i className="fa-solid fa-plus"></i></button>
                             </div>
-                            <div className="d-flex align-items-center col-lg-6">
+                            <div className="">
                               <span className="h6 pl-4 pr-2">{currencySymbol}</span>
                               <span className="h6">{convertedPrice.toLocaleString()}</span>
                             </div>
                           </div>
-                          <div className="d-flex justify-content-end mb-2">
-                            <button className="btn btn-light border text-danger" onClick={() => handleRemoveFromCart(each_item)}> Remove <i className="fa-solid fa-trash"></i></button>
-                          </div>
+                        </div>
+                        <div style={{}}>
+                          <button className="btn btn-light border text-danger" onClick={() => handleRemoveFromCart(each_item)}> Remove <i className="fa-solid fa-trash"></i></button>
+                        </div>
                         </div>
                       </div>
+                    </div>
                     );
                   })}
                 </div>
@@ -105,7 +128,7 @@ const Cart = () => {
               </div>
             </div>
             <div className="col-lg-3">
-              <div className="card mb-3 border shadow-0">
+              {/* <div className="card mb-3 border shadow-0">
                 <div className="card-body">
                   <form>
                     <label>Have coupon?</label>
@@ -115,7 +138,7 @@ const Cart = () => {
                     </div>
                   </form>
                 </div>
-              </div>
+              </div> */}
               <div className="card shadow-0 border">
                 <div className="card-body">
                   <div className="d-flex justify-content-between">
@@ -136,7 +159,7 @@ const Cart = () => {
                     <p className="mb-2 fw-bold">{<CartTotal />}</p>
                   </div>
                   <div className="mt-3">
-                    <button className="btn w-100 shadow-0 mb-2" style={{ backgroundColor: "purple", color: "white" }}>Proceed to checkout</button>
+                    <button onClick={()=> {use_auth.user.is_user_logged == false ? navigate("/login", {replace: true}) : navigate("/checkout/token", {replace: true})}} className="btn w-100 shadow-0 mb-2" style={{ backgroundColor: "purple", color: "white" }}>{use_auth.user.is_user_logged == false ? "Login to check out" : "Proceed to check out"}</button>
                     <Link to="/" className="btn btn-light w-100 border mt-2">Back to home</Link>
                   </div>
                 </div>
@@ -148,7 +171,7 @@ const Cart = () => {
 
       <Footer />
     </div>
-  );
+  }
 }
 
 export default Cart;

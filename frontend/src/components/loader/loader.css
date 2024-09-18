@@ -25,7 +25,8 @@
     width: 33.6px;
     height: 33.6px;
     animation: spinner-98imc8 2s infinite linear;
-    background-color: rgb(48, 48, 172);
+    /* background-color: rgb(48, 48, 172); */
+    background-color: rgb(79, 0, 79);
     border-radius: 50%;
     
  }
