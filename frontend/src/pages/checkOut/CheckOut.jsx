@@ -17,7 +17,7 @@ const CheckOut = () => {
   const use_auth = useAuth()
   const navigate = useNavigate()
   const { cartProducts, addToCart, updateCartItemQuantity } = useContext(CartContext);
-  const { selectedCurrency, convertCurrency, currencySymbols, currencyCodes } = useContext(CurrencyContext);
+  const { selectedCurrency, convertCurrency, currencySymbols, currentCurrencyCode } = useContext(CurrencyContext);
 
 
   const [countries, setCountries] = useState([])
@@ -36,7 +36,7 @@ const CheckOut = () => {
     country: "", //initially empty, no default country
     state: "",
     totalPrice: "",
-    currency: ""
+    currency: currentCurrencyCode
   })
 
   // Form errors state
@@ -96,7 +96,20 @@ const CheckOut = () => {
             }
           }
         ).then((feedback) => {
-          console.log(feedback)
+          // console.log(feedback)
+          const links = feedback.data.links;
+
+          // Find the link with rel: "approve"
+          const approveLink = links.find(link => link.rel === "approve");
+
+          if (approveLink) {
+            // Redirect the user to PayPal approval page
+            window.location.href = approveLink.href;
+          } else {
+            // Handle the error if the approval link is missing
+            toast.error("There was an issue connecting to the payment provider. Please try again.");
+          }
+
 
         }).finally(()=> {
           setLoading(false)
@@ -108,7 +121,6 @@ const CheckOut = () => {
 
 
   useEffect(() => {
-    // console.log(currencyCodes)
     if(!use_auth.user.is_user_logged){
       navigate("/", {replace: true})
     }
