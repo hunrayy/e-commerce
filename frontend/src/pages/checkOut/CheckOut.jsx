@@ -96,7 +96,13 @@ const CheckOut = () => {
             }
           }
         ).then((feedback) => {
-          // console.log(feedback)
+          console.log(feedback)
+          if(feedback.data.code == "error"){
+            if (feedback.data.reason.includes("CURRENCY_NOT_SUPPORTED")) {
+              toast.error("Unfortunately, the selected currency is not supported for payments. Please try another currency.");
+          }
+            toast.error()
+          }
           const links = feedback.data.links;
 
           // Find the link with rel: "approve"
@@ -252,7 +258,9 @@ const CheckOut = () => {
 
 
                 <div className="d-none d-lg-grid">
-                  <button className="btn btn-lg shadow-0 border " onClick={handleSubmit} style={{backgroundColor: "black", color: "white", fontWeight: "900"}}>Pay now</button>
+                  <button disabled={loading} className="btn btn-lg shadow-0 border " onClick={handleSubmit} style={{backgroundColor: "black", color: "white", fontWeight: "900"}}>
+                    {loading ? "Processing..." : "Pay now"}
+                  </button>
                 </div>
               </div>
           <div className=" checkout-item-summary">
@@ -268,9 +276,9 @@ const CheckOut = () => {
                     convertedPrice = Number(convertedPrice);
                   return <div className="d-flex align-items-center mb-4" key={index}>
                     <div className="me-3 position-relative">
-                      {product.quantity > 1 && <span className=" bg-dark position-absolute top-0 start-100 translate-middle badge rounded-pill badge-secondary ">
+                      {product.quantity > 1 && <div className=" bg-dark position-absolute top-0 start-100 translate-middle  rounded-pill" style={{width: "15px", height: "15px", borderRadius: "50%", color: "white", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "10px"}}>
                         {product.quantity}
-                      </span>}
+                      </div>}
                       <img src={product.img} style={{ height: "auto", width: "100%", maxWidth: "60px"}} className="img-sm rounded border" />
                     </div>
                     <div>
@@ -289,9 +297,11 @@ const CheckOut = () => {
                 </div>
 
 
-                {/* <div className="d-grid d-lg-none" style={{background: "red", wdth: "100%"}}> */}
-                    <button className="btn btn-lg shadow-0 border" onClick={handleSubmit} style={{backgroundColor: "black", color: "white", fontWeight: "900", width: "100%"}}>Pay now</button>
-                  {/* </div> */}
+                <div className="d-grid d-lg-none">
+                    <button disabled={loading} className="btn btn-lg shadow-0 border" onClick={handleSubmit} style={{backgroundColor: "black", color: "white", fontWeight: "900", width: "100%"}}>
+                    {loading ? "Processing..." : "Pay now"}
+                    </button>
+                  </div>
               </div>
             </div>
             </div>
