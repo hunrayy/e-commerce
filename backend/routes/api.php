@@ -2,18 +2,11 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\AuthController;
 
-Route::get('api/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
 
-
-
-
-// Route::get('auth/google', [GoogleController::class, 'redirectToGoogle']);
-// web.php (or api.php based on your setup)
-
-// Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
-
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
+Route::post('/send-email-verification-code', [AuthController::class, 'sendEmailVerificationCode']);
+Route::post('/verify-email-verification-code', [AuthController::class, 'verifyEmailVerificationCode']);
