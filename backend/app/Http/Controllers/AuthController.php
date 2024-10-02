@@ -2,11 +2,18 @@
 
 namespace App\Http\Controllers;
 
+
 use Illuminate\Http\Request;
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+use Firebase\JWT\ExpiredException;
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-use Illuminate\Support\Facades\Mail;
+use PHPMailer\PHPMailer\Exception; //for catching errors
+use Illuminate\Support\Facades\Mail; //for mail sending
+use Illuminate\Support\Facades\Validator; //for validating the request coming in
+use Illuminate\Support\Facades\Hash; //for password hahsing
+use Illuminate\Support\Facades\Log; //for logging error to the terminal
+use App\Models\User;
 
 class AuthController extends Controller
 {
@@ -17,7 +24,7 @@ class AuthController extends Controller
     }
 
     //function to create a JWT token
-    private function createToken($payload, $expiresIn){
+    public function createToken($payload, $expiresIn){
         $key = env('JWT_SECRET');
         $payload['exp'] = time() + $expiresIn; // Token expiration time in seconds
 
@@ -61,9 +68,11 @@ class AuthController extends Controller
                 'message' => 'Email verification code sent successfully',
                 'verificationCode' => $hashedCode,
                 'generatedToken' => $this->createToken(['email' => $email, 'verificationCode' => $verificationCode], 300),
+                'testCode' => $verificationCode
             ]);
             
         }catch (Exception $e) {
+            Log::error('Error occurred: ' . $e->getMessage());
             return response()->json([
                 'code' => 'error',
                 'message' => 'An error occurred while sending the verification code',
@@ -77,16 +86,14 @@ class AuthController extends Controller
     public function verifyEmailVerificationCode(Request $request){
         //validation rules
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
             'verificationCode' => 'required|string',
-            'verificationCodeFromCookie' => 'required|string'
         ]);
         if($validator->fails()){
             return response()->json([
                 'code' => 'error',
                 'message' => 'Validation error',
                 'errors' => $validator->errors()
-            ], 400);
+            ]);
         }
         $email = $request->input('email');
         $verificationCode = $request->input('verificationCode');
@@ -100,13 +107,13 @@ class AuthController extends Controller
                 // Perform action with the token token extracted
                 try{
                     //verify the token (JWT)
-                    $decoded = JWT::decode($verificationCodeFromCookie, env('JWT_SECRET'), ['HS256']);
+                    $decoded = JWT::decode($verificationCodeFromCookie, new Key(env('JWT_SECRET'),'HS256'));
                     $decodedArray = (array)$decoded;
         
-                    if($decodedArray['code'] === $verificationCode){
+                    if($decodedArray['verificationCode'] == $verificationCode){
                         //if the verification code matches, create a new token
                         $payload = ['email' => $email];
-                        $createAccountToken = $this->createToken($payload, 20 * 60); // 20 minutes
+                        $createAccountToken = $this->createToken($payload, 20 * 60); // 20 minutes expiration timec
         
                         return response()->json([
                             'code' => 'success',
@@ -127,27 +134,129 @@ class AuthController extends Controller
                         'reason' => $e->getMessage()
                     ]);
                 }catch (\Exception $e) {
+                    Log::error('Error occurred: ' . $e->getMessage());
+
                     return response()->json([
                         'code' => 'error',
                         'message' => 'An error occurred while verifying token',
                         'reason' => $e->getMessage()
-                    ], 500);
+                    ]);
                 }
             } else {
                 return response()->json([
                     'code' => 'error',
                     'message' => 'Authorization type must be Bearer',
-                ], 400);
+                ]);
             }
         } else {
             return response()->json([
                 'code' => 'error',
                 'message' => 'Authorization header not provided',
-            ], 400);
+            ]);
         }
+    }
+
+    public function createAccount(Request $request)
+    {
+        // Validate request
+        $request->validate([
+            'firstname' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        try {
+            // Check if the user already exists
+            $existingUser = User::where('email', $request->email)->first();
+            if ($existingUser) {
+                return response()->json([
+                    'code' => 'error',
+                    'message' => 'Email already in use',
+                ]);
+            }
+
+            // Hash the password
+            $hashedPassword = Hash::make($request->password);
+
+            // Create new user
+            $user = User::create([
+                'firstname' => $request->firstname,
+                'email' => $request->email,
+                'password' => $hashedPassword,
+            ]);
+
+            return response()->json([
+                'code' => 'success',
+                'message' => 'Account successfully created',
+                'data' => [
+                    'firstname' => $request->firstname,
+                    'email' => $request->email,
+                ],
+            ]);
+        } catch (\Exception $error) {
+            Log::error('Error occurred: ' . $e->getMessage());
+            return response()->json([
+                'code' => 'error',
+                'message' => 'Account could not be created',
+                'reason' => $error->getMessage(),
+            ]);
+        }
+    }
+    public function login(Request $request){
+        try{
+                //validate the request coming in
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|string',
+                'password' => 'required|string'
+            ]);
+            if($validator->fails()){
+                return response()->json([
+                    'code' => 'error',
+                    'message' => 'Email and password required'
+                ]);
+            }
+            //check if the user exists by email
+            $user = User::where('email', $request->input('email'))->first();
+            if(!$user){
+                return response()->json([
+                    'code' => 'error',
+                    'message' => 'Invalid email/password, have you registered?'
+                ]);
+            }
+
+            //the user exists.
+            //verify if the password match
+            if(!Hash::check($request->input('password'), $user->password)){
+                return response()->json([
+                    'code' => 'error',
+                    'message' => 'Invalid email/password, have you registered?'
+                ]);
+            }
+            //password match...create JWT login token for user
+            $payload = [
+                'email' => $user->email,
+                'password' => $user->password
+            ];
+            $token = $this->createToken($payload, 20 * 86400);
+
+            return response()->json([
+                'message' => 'Login success',
+                'code' => 'success',
+                'data' => [
+                    'firstname' => $user->firstname,
+                    'email' => $user->email,
+                    'token' => $token
+                ]
+            ]);
+        }catch(\Exception $e){
+            Log::error('Error occurred: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'An error occurred while logging you in.',
+                'code' => 'error',
+                'reason' => $e->getMessage()
+            ]);
+        }
+
         
-
-
-
     }
 }
