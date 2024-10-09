@@ -47,7 +47,8 @@ const CheckOut = () => {
     state: "",
     totalPrice: "",
     currency: currentCurrencyCode,
-    expectedDateOfDelivery: ""
+    expectedDateOfDelivery: "",
+    checkoutTotal: ""
   })
 
   // Form errors state
@@ -260,9 +261,16 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
       // Format the total
       const currencySymbol = currencySymbols[selectedCurrency];
       const formattedTotal = totalWithShipping.toLocaleString();
+      const formattedTotalWithoutCommas = parseFloat(formattedTotal.replace(/,/g, '')).toFixed(2);
+
 
       // Update state with the new total
       setCheckoutTotal(formattedTotal);
+      setFormData((prev) => ({
+        ...prev,
+        checkoutTotal: formattedTotalWithoutCommas
+      }))
+      
 
       //calculate expected date of delivery
       const expectedDate = calculateExpectedDateOfDelivery(formData.country)
