@@ -253,8 +253,8 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
   useEffect(() => {
     if (formData.country) {
       // Calculate shipping fee and cart total
-      const shippingFee = parseFloat(calculateShippingFee(formData.country)); // Get numeric shipping fee
-      const cartTotal = calculateTotal(cartProducts, convertCurrency, selectedCurrency); // Get numeric cart total
+      const shippingFee =   parseFloat(calculateShippingFee(formData.country).replace(/,/g, ''))   ; // Get numeric shipping fee
+      const cartTotal = (calculateTotal(cartProducts, convertCurrency, selectedCurrency)); // Get numeric cart total
       const totalWithShipping = cartTotal + shippingFee; // Perform sum operation
 
       // Format the total
@@ -426,18 +426,28 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
                   <p className="mb-2"><CartTotal /></p>
                 </div>
 
-                <div className="d-flex justify-content-between">
-                  <p className="mb-2">Expected date of delivery:</p>
-                  <p className="mb-2">{formData.expectedDateOfDelivery}</p>
+                <div className="d-flex" style={{justifyContent: "space-between"}}>
+                  <p className="mb-2" style={{flex: "2"}}>Expected date of delivery:</p>
+                  <div style={{textAlign: "right", flex: "1"}}>
+                    <p className="mb-2">
+                    {(() => {
+                        if(!formData.country){
+                          return "..."
+                        }else{
+                          return `${formData.expectedDateOfDelivery}`; // Combine currency symbol with formatted total
+                        }
+                      })()}
+                    </p>
+                  </div>
                 </div>
                 <div className="d-flex justify-content-between">
                   <p className="mb-2">Shipping fee:</p>
-                  <p className="mb-2">{}
+                  <p className="mb-2">
                   {(() => {
                       if(!formData.country){
                         return "..."
                       }else{
-                        return `${currentCurrencyCode} ${calculateShippingFee(formData.country)}`; // Combine currency symbol with formatted total
+                        return `${currencySymbols[selectedCurrency]} ${calculateShippingFee(formData.country)}`; // Combine currency symbol with formatted total
                       }
                     })()}
                   </p>
@@ -445,7 +455,14 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
 
                 <div className="d-flex justify-content-between">
                   <p className="mb-2 fw-bold">Total price:</p>
-                  <p className="mb-2 fw-bold">{currentCurrencyCode} {checkoutTotal}</p>
+                  <p className="mb-2 fw-bold"> {(() => {
+                      if(!formData.country){
+                        return "..."
+                      }else{
+                        return `${currencySymbols[selectedCurrency]}`; // Combine currency symbol with formatted total
+                      }
+                    })()} {checkoutTotal}</p>
+                  
                 </div>
 
                 <div className="d-grid d-lg-none">
