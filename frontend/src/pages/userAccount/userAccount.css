@@ -1,5 +1,6 @@
 .user-account-page-container{
   margin-top: var(--marginAboveTop);
+  background-color: var(--bodyColor);
 }
 
 
