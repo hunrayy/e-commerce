@@ -16,6 +16,7 @@ import AdminLogin from "./pages/adminLogin/AdminLogin"
 import VerifyEmailCode from "./pages/verifyEmailCode/VerifyEmailCode"
 import ForgotPassword from "./pages/forgotPassword/ForgotPassword"
 import ResetPassword from "./pages/resetPassword/ResetPassword"
+import ContactUs from "./pages/contactUs/ContactUs"
 import { AuthProvider } from "./components/AuthContext/AuthContext"
 import CheckOut from "./pages/checkOut/CheckOut"
 import { ToastContainer } from "react-toastify"
@@ -47,6 +48,7 @@ function App() {
             <Route path="/user-account" element={<UserAccount />} />
             <Route path="/register/:token" element={<Register />} />
             <Route path="/policies/shipping-policy" element={<ShippingPolicy />} />
+            <Route path="/pages/contact" element={<ContactUs />} />
             <Route path="/policies/refund-policy" element={<RefundPolicy />} />
             <Route path="/policies/delivery-policy" element={<DeliveryPolicy />} />
             <Route path="/admin/dashboard/:token" element={<AdminDashboard />} />

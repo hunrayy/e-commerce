@@ -44,6 +44,11 @@ Route::post('/save-products-to-db-after-payment', [OrderController::class, 'save
 Route::post('/get-user-details', [OrderController::class, 'getUserDetails'])->middleware(VerifyJWTToken::class);
 Route::post('/send-password-reset-link', [UserPasswordResetController::class, 'sendPasswordResetLink']);
 Route::post('/reset-password', [UserPasswordResetController::class, 'resetPassword'])->middleware(VerifyJWTToken::class);
+Route::get('/get-user-details', [AuthController::class, 'getUserDetails'])->middleware(VerifyJWTToken::class);
+Route::post('/send-feedback', [AuthController::class, 'sendFeedback']);
+
+
+
 
 
 
