@@ -26,19 +26,46 @@ const Products = () => {
 
 
     useEffect(()=> {
+        // setAllProducts({
+        //     products: [],
+        //     products_loading: true
+        // })
+
+        let loaderTimeout;
+
+        // Initially set products to an empty array and loading to false
         setAllProducts({
             products: [],
-            products_loading: true
-        })
-        
+            products_loading: false
+        });
+    
+        // Set a timeout to show the loader after 500ms
+        loaderTimeout = setTimeout(() => {
+            setAllProducts(prevState => ({
+                ...prevState,
+                products_loading: true // Only show loader if data is taking long
+            }));
+        }, 300); // You can adjust this time (500ms) to control the delay for showing the loader
+    
+
+    
         axios.get(`${import.meta.env.VITE_BACKEND_URL}/get-all-products`).then((feedback) => {
             console.log(feedback)
+            console.log(Array.isArray(feedback.data.data))
             setAllProducts({
-                products: feedback.data.data,
+                products:  Array.isArray(feedback.data.data) ? feedback.data.data : JSON.parse(feedback.data.data),
                 products_loading: false
             })
-        })
-        console.log(jsonProducts)
+        }).finally(() => {
+            // Clear the loader timeout and stop the loader when the request completes
+            clearTimeout(loaderTimeout);
+            setAllProducts(prev => ({
+                ...prev,
+                products_loading: false // Ensure loader is hidden after request is done
+            }));
+        });
+
+        // console.log(jsonProducts)
         // setAllProducts({
         //     products: jsonProducts,
         //     products_loading: false
@@ -83,7 +110,7 @@ const Products = () => {
                 {allProducts.products_loading && <HomePageLoader />}
                 <div className="row">
                     {allProducts.products?.slice().reverse().map((product, index) =>{
-                        console.log(product)
+                        // console.log(product)
                         const inCart = cartItems?.some(item => item.id === product.id)
                         const isRecentlyAdded = cartProducts.recentlyAddedProducts.includes(product.id);
                         const convertedPrice = Number(convertCurrency(product.productPriceInNaira, 'NGN', selectedCurrency)).toLocaleString();

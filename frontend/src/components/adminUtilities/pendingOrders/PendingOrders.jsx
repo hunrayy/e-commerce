@@ -189,13 +189,13 @@ import { toast } from 'react-toastify'
                         </div>
                     </div>
                     <h4 style={{color: "#333"}} className='mt-2'>Order Summary:</h4>
-                    <div style={{display: "flex", flexWrap: "wrap", gap: "10px"}} className='border p-2'>
+                    <div style={{display: "flex", flexWrap: "wrap", gap: "10px"}} className='border p-2 justify-content-center justify-content-md-start'>
                         {
                             
-                            JSON.parse(singleOrder.products).map((product) => {
-                                return <div class="card">
-                                    <img src={product.img} class="card-img-top" style={{maxHeight: "100px", objectFit: "contain"}} alt="..." />
-                                    <div class="card-body">
+                            JSON.parse(singleOrder.products).map((product, index) => {
+                                return <div className="card" key={index}>
+                                    <img src={product.img} className="card-img-top" style={{maxHeight: "100px", objectFit: "contain"}} alt={`product image ${index + 1}`} />
+                                    <div className="card-body">
                                         <div style={{textAlign: "center"}}>
                                             <p style={{margin: "0"}}><b>{product.name}</b></p>
                                             <p style={{margin: "0"}}>Length - {product.lengthPicked}</p>
@@ -245,7 +245,7 @@ import { toast } from 'react-toastify'
                                 {trackingIdError && <small className="text-danger">{trackingIdError}</small>}
                             </div>
                             <div className="form-group mt-3">
-                                <label>To verify, type <b>Out For Delivery</b> below:</label>
+                                <label>To verify, type <b>out for delivery</b> below:</label>
                                 <input type="text" name='verificationText' value={verificationText} onChange={handleInputChange} required className='form-control' />
                                 {verificationTextError && <small className="text-danger">{verificationTextError}</small>}
                             </div>

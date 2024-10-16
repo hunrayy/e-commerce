@@ -180,6 +180,7 @@ const ContactUs = () => {
                             <input
                                 type="number"
                                 name="otp"
+                                min='1'
                                 value={formData.otp}
                                 onChange={handleChange}
                                 placeholder="Enter OTP received"

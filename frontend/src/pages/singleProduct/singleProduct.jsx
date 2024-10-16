@@ -59,6 +59,8 @@ const SingleProduct = () => {
       console.log(feedback)
       if(feedback.data.code == "success"){
         // setLoading(false)
+        // Check if the data is a string and parse it if needed
+        const productData = typeof feedback.data.data === "string" ? JSON.parse(feedback.data.data) : feedback.data.data;
         setProduct({
           id: feedback.data.data.id,
           img: feedback.data.data.productImage,
@@ -220,8 +222,10 @@ const SingleProduct = () => {
                    
                       <div className="d-grid">
                         <button
-                          className="btn"
-                          style={inCart || isRecentlyAdded ? { backgroundColor: "black", color: "white" } : { border: "1px solid black", color: "black" }}
+                          className="btn hover-button"
+                          // style={inCart || isRecentlyAdded ? { backgroundColor: "black"} : { border: "1px solid black", color: "black" }}
+                          // style={inCart || isRecentlyAdded ? { backgroundColor: "black"} : { border: "1px solid black", color: "black" }}
+                          style={inCart ? {background: "black", color: "white"} : null}
                           onClick={handleAddToCart}
                         >
                           {inCart || isRecentlyAdded ? "Added to cart" : <span>Add to cart <i className="fas fa-shopping-cart m-1 me-md-2"></i></span>}

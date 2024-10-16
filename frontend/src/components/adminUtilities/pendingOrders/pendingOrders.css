@@ -15,10 +15,11 @@
 .single-order-wrapper{
     background-color: white;
     width: 80%;
+    height: 80vh;
     padding: 20px;
     border-radius: 10px;
-    height: 550px;
-    /* max-height: 800px; */
+    /* height: 550px; */
+    /* max-height: 800%; */
     overflow-y: auto;
 }
 
@@ -37,7 +38,5 @@
     .out-for-delivery-modal-wrapper{
         width: 90%;
     }
-    .single-order-wrapper{
-        height: 800px;
-    }
+   
 }

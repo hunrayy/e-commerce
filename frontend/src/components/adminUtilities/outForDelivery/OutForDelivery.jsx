@@ -77,8 +77,8 @@ const OutForDelivery = () => {
         }
 
         // Validate Verification Text
-        if (verificationText.trim().toLocaleLowerCase() !== 'out for delivery') {
-            setVerificationTextError('Verification text must be "Out For Delivery"');
+        if (verificationText.trim().toLocaleLowerCase() !== 'delivered') {
+            setVerificationTextError('Verification text must be "delivered"');
             isValid = false;
         }
 
@@ -100,7 +100,7 @@ const OutForDelivery = () => {
                 setIsLoading(false)
                 if(feedback.data.code == "success"){
                     //filter out the pending order from the list of pending orders
-                    setOutForDeliveryOrders((prev) => prev.filter(order => order.tracking_id !== outForDeliveryModal.tracking_id))
+                    setOutForDeliveryOrders((prev) => prev.filter(order => order.tracking_id !== deliveredModal.tracking_id))
                     setTrackingId('');
                     setVerificationText('');
                     setDeliveredModal(null)
@@ -145,7 +145,7 @@ const OutForDelivery = () => {
                     <td>{formatDate(each_item.created_at)}</td>
                     <td>{formatDate(each_item.updated_at)}</td>
                     <td>
-                        <button className='btn btn-sm' style={{background: "purple", color: "white"}} onClick={()=> handleViewMorePendingOrders(each_item)}>View more</button>
+                        <button className='btn btn-sm' style={{background: "purple", color: "white"}} onClick={()=> handleViewMoreOutForDeliveryOrders(each_item)}>View more</button>
                     </td>
                     </tr>
                 </tbody>
@@ -196,13 +196,13 @@ const OutForDelivery = () => {
                         </div>
                     </div>
                     <h4 style={{color: "#333"}} className='mt-2'>Order Summary:</h4>
-                    <div style={{display: "flex", flexWrap: "wrap", gap: "10px"}} className='border p-2'>
+                    <div style={{display: "flex", flexWrap: "wrap", gap: "10px"}} className='border p-2 justify-content-center justify-content-md-start'>
                         {
                             
-                            JSON.parse(singleOrder.products).map((product) => {
-                                return <div class="card">
-                                    <img src={product.img} class="card-img-top" style={{maxHeight: "100px", objectFit: "contain"}} alt="..." />
-                                    <div class="card-body">
+                            JSON.parse(singleOrder.products).map((product, index) => {
+                                return <div className="card" key={index}>
+                                    <img src={product.img} className="card-img-top" style={{maxHeight: "100px", objectFit: "contain"}} alt={`product image ${index + 1}`} />
+                                    <div className="card-body">
                                         <div style={{textAlign: "center"}}>
                                             <p style={{margin: "0"}}><b>{product.name}</b></p>
                                             <p style={{margin: "0"}}>Length - {product.lengthPicked}</p>
@@ -215,7 +215,7 @@ const OutForDelivery = () => {
                         }
                     </div>
                     <div className='d-flex justify-content-center justify-content-md-end mt-3'>
-                        <button style={{background: "purple", color: "white"}} className='btn' onClick={()=>handleMarkAsOutForDelivery(singleOrder)}>Mark as Out for Delivery</button>
+                        <button style={{background: "purple", color: "white"}} className='btn' onClick={()=>handleMarkAsDelivered(singleOrder)}>Mark as Delivered</button>
                     </div>
                 
                 </div>
@@ -252,7 +252,7 @@ const OutForDelivery = () => {
                                 {trackingIdError && <small className="text-danger">{trackingIdError}</small>}
                             </div>
                             <div className="form-group mt-3">
-                                <label>To verify, type <b>Out For Delivery</b> below:</label>
+                                <label>To verify, type <b>delivered</b> below:</label>
                                 <input type="text" name='verificationText' value={verificationText} onChange={handleInputChange} required className='form-control' />
                                 {verificationTextError && <small className="text-danger">{verificationTextError}</small>}
                             </div>

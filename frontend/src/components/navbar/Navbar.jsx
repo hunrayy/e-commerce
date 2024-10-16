@@ -77,7 +77,7 @@ const Navbar = () => {
                       />
                     </div>
                     <div>
-                      <a href="#" style={{ fontWeight: "bold", color: "white", textDecoration: "none" }}>contact</a>
+                      <Link to='/pages/contact' style={{ fontWeight: "bold", color: "white", textDecoration: "none" }}>contact</Link>
                     </div>
                     <div>
                       <Link to="/policies/refund-policy" style={{ fontWeight: "bold", color: "white", textDecoration: "none" }}>Refund policy</Link>

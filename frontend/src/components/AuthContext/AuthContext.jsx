@@ -39,7 +39,7 @@ export const AuthProvider = ({children}) => {
             console.log("User logged in successfully!")
 
             // navigate to the user page
-            if(user.user == "admin"){
+            if(user.user == "admin" && user.is_an_admin){
                 navigate(`/admin/dashboard/${user.token}`, {
                     replace: true
                 })
