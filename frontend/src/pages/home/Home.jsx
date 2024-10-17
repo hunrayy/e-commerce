@@ -32,6 +32,12 @@ const Home = () => {
             }
             <Navbar />
             <Banner />
+            <div className="container">
+            <header style={{marginTop: "50px"}}>
+                <h3>New products</h3>
+            </header>
+
+            </div>
             <Products />
             <FooterVideo />
             <Footer />

@@ -17,6 +17,7 @@ const AllProducts = () => {
         products: [],
         products_loading: false,
     });
+    const [totalProducts, setTotalProducts] = useState([])
     const [selectedProduct, setSelectedProduct] = useState(null); // Track selected product for modal
     const [productToDelete, setProductToDelete] = useState(null); // Track product to delete
     const [productDeleting, setProductDeleting] = useState(false)
@@ -88,8 +89,9 @@ const AllProducts = () => {
             .then((feedback) => {
                 console.log(feedback)
                 if (feedback.data.code === "success") {
+                    setTotalProducts(feedback.data.data)
                     setAllProducts({
-                        products: feedback.data.data,
+                        products: feedback.data.data.data,
                         products_loading: false,
                     });
                 }
@@ -199,7 +201,7 @@ const AllProducts = () => {
                     </header>
                     <div className="row">
                         {allProducts.products_loading && <BasicLoader />}
-                        {allProducts.products?.slice().reverse().map((product) => {
+                        {allProducts.products?.map((product) => {
                             console.log(product)
                             const productPrice = parseFloat(product.productPriceInNaira);
                             const convertedPrice = convertCurrency(productPrice, "NGN", selectedCurrency);
@@ -233,6 +235,9 @@ const AllProducts = () => {
                                 </div>
                             );
                         })}
+                        {/* <PaginationButton totalProducts={totalProducts} setTotalProducts={setTotalProducts}  products={allProducts.products} setProducts={setAllProducts}/> */}
+                        <div style={{display: "flex", justifyContent: "center", margin: "50px 0"}}>
+    </div>
                     </div>
                 </div>
             </section>
