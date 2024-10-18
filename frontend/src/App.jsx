@@ -26,7 +26,6 @@ import AllProducts from "./pages/allProducts/AllProducts"
 import AdminForgotPassword from "./pages/adminForgotPassword/AdminForgotPassword"
 import AdminResetPassword from "./pages/adminResetPassword/AdminResetPassword"
 
-
 function App() {
 
   return (

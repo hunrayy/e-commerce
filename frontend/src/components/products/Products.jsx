@@ -14,7 +14,7 @@ import jsonProducts from "./products.json"
 
 
 
-const Products = () => {
+const Products = ({ showPaginationButtons }) => {
     const navigate = useNavigate()
     const { selectedCurrency, convertCurrency, currencySymbols } = useContext(CurrencyContext);
     const { cartProducts, addToCart} = useContext(CartContext);
@@ -62,9 +62,6 @@ const Products = () => {
 
     // Handler for next page
     const handleNextPage = () => {
-        // console.log(Math.ceil(Number(totalProducts) / Number(perPage)))
-        // console.log(typeof(currentPage))
-
         if (currentPage < Math.ceil(totalProducts.total / perPage)) {
             console.log()
             setCurrentPage((prevPage) => {
@@ -85,6 +82,12 @@ const Products = () => {
             });
         }
     };
+
+    const handlePaginate = (index) => {
+        setCurrentPage((prevPage) => {
+            return index;
+        });
+    }
 
     useEffect(()=> {
         fetchProducts()
@@ -162,14 +165,33 @@ const Products = () => {
                     </div>)
                     })}
                     
-                    <div style={{display: "flex", justifyContent: "center", margin: "50px 0"}}>
+                    {/* <div style={{display: "flex", justifyContent: "center", margin: "50px 0"}}>
                         
                         <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
                             <button className='btn btn-dark' onClick={handlePreviousPage} disabled={currentPage < 2}>&laquo;</button>
                             &nbsp;&nbsp;<span>Page {currentPage} of {Math.ceil(totalProducts.total / perPage)}</span>&nbsp;&nbsp;
                             <button className='btn btn-dark'  onClick={handleNextPage} disabled={currentPage == Math.ceil(totalProducts.total / perPage)}>&raquo;</button>
                         </div>
+                    </div> */}
+                    {
+                        showPaginationButtons && <div style={{display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column"}}>
+                        <p><span>Page {currentPage} of {Math.ceil(totalProducts.total / perPage)}</span></p>
+                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                            <button className='btn btn-dark' onClick={handlePreviousPage} disabled={currentPage < 2}>&laquo;</button>
+                            {
+                                (()=>{
+                                    
+                                    return Array.from({ length: Math.ceil(totalProducts.total / perPage) }, (_, index) => (
+                                        <button className={`btn btn-light ${currentPage == index + 1 && 'btn-dark'}`}  key={index} onClick={()=> handlePaginate(index + 1)}>{index + 1}</button>
+                                    ));
+                                })()
+                            }
+                            <button className='btn btn-dark'  onClick={handleNextPage} disabled={currentPage == Math.ceil(totalProducts.total / perPage)}>&raquo;</button>
+
+
+                        </div>
                     </div>
+                    }
 
                 </div>
             </div>

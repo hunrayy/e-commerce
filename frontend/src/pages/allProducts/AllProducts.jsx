@@ -16,6 +16,7 @@ const AllProducts = () => {
         const [products, setProducts] = useState([]);
         const [totalProducts, setTotalProducts] = useState([]);
         const [currentPage, setCurrentPage] = useState(1);
+        const [showPaginationButtons, setShowPaginationButtons] = useState(true)
             // Fetch paginated products
     const fetchProducts = async (page) => {
         try {
@@ -102,7 +103,7 @@ const AllProducts = () => {
                         </div>
                         })
                     } */}
-                    <Products />
+                    <Products showPaginationButtons={showPaginationButtons} />
 
                     {/* <PaginationButton totalProducts={totalProducts} setTotalProducts={setTotalProducts} products={products} setProducts={setProducts} /> */}
 
