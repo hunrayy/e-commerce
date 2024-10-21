@@ -242,6 +242,9 @@ const AllProducts = () => {
                     <header className="mb-4">
                         <h3>All products</h3>
                     </header>
+                    <div>
+                        <p style={{fontSize: "18px" }} className='float-right'>View all | {totalProducts.total} Products</p>
+                    </div>
                     <div className="row">
                         {allProducts.products_loading && <BasicLoader />}
                         {allProducts.products?.map((product) => {
@@ -279,26 +282,29 @@ const AllProducts = () => {
                             );
                         })}
                         {/* pagination button */}
-                        <div style={{display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column"}}>
-                        <p><span>Page {currentPage} of {Math.ceil(totalProducts.total / perPage)}</span></p>
-                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                            <button className='btn btn-dark' onClick={handlePreviousPage} disabled={currentPage < 2}>&laquo;</button>
-                            {
-                                (()=>{
-                                    
-                                    return Array.from({ length: Math.ceil(totalProducts.total / perPage) }, (_, index) => (
-                                        <button className={`btn btn-light ${currentPage == index + 1 && 'btn-dark'}`}  key={index} onClick={()=> handlePaginate(index + 1)}>{index + 1}</button>
-                                    ));
-                                })()
-                            }
-                            <button className='btn btn-dark'  onClick={handleNextPage} disabled={currentPage == Math.ceil(totalProducts.total / perPage)}>&raquo;</button>
+                        {
+                            allProducts.products.length > 0 && <div style={{display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column"}}>
+                                <p><span>Page {currentPage} of {Math.ceil(totalProducts.total / perPage)}</span></p>
+                                <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                    <button className='btn btn-dark' onClick={handlePreviousPage} disabled={currentPage < 2}>&laquo;</button>
+                                    {
+                                        (()=>{
+                                            
+                                            return Array.from({ length: Math.ceil(totalProducts.total / perPage) }, (_, index) => (
+                                                <button className={`btn btn-light ${currentPage == index + 1 && 'btn-dark'}`}  key={index} onClick={()=> handlePaginate(index + 1)}>{index + 1}</button>
+                                            ));
+                                        })()
+                                    }
+                                    <button className='btn btn-dark'  onClick={handleNextPage} disabled={currentPage == Math.ceil(totalProducts.total / perPage)}>&raquo;</button>
 
-
-                        </div>
-                    </div>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </section>
+
+
             {/* search modal */}
             {searchState.isSearching && (
              <div className="custom-modal-overlay-form" onClick={() => setSearchState((prev) => ({...prev, isSearching: false}))}>

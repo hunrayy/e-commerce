@@ -47,6 +47,8 @@ Route::post('/reset-password', [UserPasswordResetController::class, 'resetPasswo
 Route::get('/get-user-details', [AuthController::class, 'getUserDetails'])->middleware(VerifyJWTToken::class);
 Route::post('/send-feedback', [AuthController::class, 'sendFeedback']);
 Route::get('/user/get-page', [GetPagesController::class, 'index']);
+Route::get('/get-product-details', [productController::class, 'getProductDetails']);
+
 
 
 

@@ -55,15 +55,15 @@ const RefundPolicy = () => {
                     <p>{policyTitle}</p>
 
                     {/* List of policy sections */}
-                    <ul type="none" style={{ display: "flex", flexDirection: "column", gap: "20px"}}>
+                    <div>
                         {policySections.map((section, index) => (
-                            <li
+                            <p
                                 key={index}
                             >
                                 {section}
-                            </li>
+                            </p>
                         ))}
-                    </ul>
+                    </div>
                 </div>
             </div>
             <Footer />

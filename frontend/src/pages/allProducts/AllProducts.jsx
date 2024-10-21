@@ -73,6 +73,15 @@ const AllProducts = () => {
         <Navbar />
         <div className="all-products-page-container">
             <section>
+                        {/* <video 
+    muted 
+    autoPlay 
+    loop 
+    playsInline 
+    style={{width: "100%"}}
+    src="https://images.hergivenhair.com/hghemail/2023/images/adv.mp4">
+    Your browser does not support the video tag.
+  </video> */}
             <div className="container">
                 <header className="" style={{padding: "30px 0"}}>
                     <h1 className=''><b>All Products</b></h1>

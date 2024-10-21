@@ -98,7 +98,10 @@ const UserAccount = () => {
                           <div className="row">
                             <div className="d-flex align-items-center">
                               <div style={{width: "100%"}}><b>Tracking ID:</b> <span className="text-muted">{each_item.tracking_id}</span><br />
-                                <p><b>Date:</b> <span className="text-muted">{new Date(each_item.created_at).toDateString()}</span></p>
+                                <b>Date Ordered:</b> <span className="text-muted">{new Date(each_item.created_at).toDateString()}</span>
+                                {each_item.status == 'delivered' && 
+                                  <p><b>Date Delivered:</b> <span className="text-muted">{new Date(each_item.updated_at).toDateString()}</span></p>
+                                }
                               </div>
                               {each_item.status == "Pending" && <p className="badge bg-warning">Pending...</p>}
                               {each_item.status == "outForDelivery" && <p className="badge bg-info">Out for delivery</p>}
@@ -124,7 +127,7 @@ const UserAccount = () => {
                             <div className="col-md-4">
                               <p>
                                 <b>Payment</b> <br />
-                                <b>Shipping fee:</b> <span className="text-muted">{each_item.currency} {each_item.shippingFee}</span> <br />
+                                {/* <b>Shipping fee:</b> <span className="text-muted">{each_item.currency} {each_item.shippingFee}</span> <br /> */}
                                 <b>Total paid:</b> <span className="text-muted">{each_item.currency} {Number(each_item.totalPrice).toLocaleString()}</span>
                               </p>
                             </div>

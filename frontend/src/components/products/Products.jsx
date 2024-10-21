@@ -145,7 +145,7 @@ const Products = ({ showPaginationButtons }) => {
                     {allProducts.products?.map((product, index) =>{
                         // console.log(product)
                         // const inCart = cartItems?.some(item => item.id === product.id)
-                        const isRecentlyAdded = cartProducts.recentlyAddedProducts.includes(product.id);
+                        // const isRecentlyAdded = cartProducts.recentlyAddedProducts.includes(product.id);
                         const convertedPrice = Number(convertCurrency(product.productPriceInNaira, 'NGN', selectedCurrency)).toLocaleString();
                         const currencySymbol = currencySymbols[selectedCurrency];
                         return (<div key={index} className="col-lg-3 col-md-6 col-sm-6 col-6 single-item-container"  onClick={()=>navigateToProduct(product.id)}>
@@ -174,23 +174,23 @@ const Products = ({ showPaginationButtons }) => {
                         </div>
                     </div> */}
                     {
-                        showPaginationButtons && <div style={{display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column"}}>
-                        <p><span>Page {currentPage} of {Math.ceil(totalProducts.total / perPage)}</span></p>
-                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                            <button className='btn btn-dark' onClick={handlePreviousPage} disabled={currentPage < 2}>&laquo;</button>
-                            {
-                                (()=>{
-                                    
-                                    return Array.from({ length: Math.ceil(totalProducts.total / perPage) }, (_, index) => (
-                                        <button className={`btn btn-light ${currentPage == index + 1 && 'btn-dark'}`}  key={index} onClick={()=> handlePaginate(index + 1)}>{index + 1}</button>
-                                    ));
-                                })()
-                            }
-                            <button className='btn btn-dark'  onClick={handleNextPage} disabled={currentPage == Math.ceil(totalProducts.total / perPage)}>&raquo;</button>
+                        showPaginationButtons && allProducts.products.length > 0 && <div style={{display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column"}}>
+                            <p><span>Page {currentPage} of {Math.ceil(totalProducts.total / perPage)}</span></p>
+                            <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                <button className='btn btn-dark' onClick={handlePreviousPage} disabled={currentPage < 2}>&laquo;</button>
+                                {
+                                    (()=>{
+                                        
+                                        return Array.from({ length: Math.ceil(totalProducts.total / perPage) }, (_, index) => (
+                                            <button className={`btn btn-light ${currentPage == index + 1 && 'btn-dark'}`}  key={index} onClick={()=> handlePaginate(index + 1)}>{index + 1}</button>
+                                        ));
+                                    })()
+                                }
+                                <button className='btn btn-dark'  onClick={handleNextPage} disabled={currentPage == Math.ceil(totalProducts.total / perPage)}>&raquo;</button>
 
 
+                            </div>
                         </div>
-                    </div>
                     }
 
                 </div>

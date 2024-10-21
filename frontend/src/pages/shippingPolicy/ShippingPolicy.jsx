@@ -54,11 +54,11 @@ const ShippingPolicy = () => {
                     <p>{policyTitle}</p>
 
                     {/* List of policy sections */}
-                    <ul type="none" style={{ display: "flex", flexDirection: "column", gap: "20px"}}>
+                    <div type="none" style={{ display: "flex", flexDirection: "column", gap: "20px"}}>
                         {policySections.map((section, index) => (
-                            <li key={index}>{section}</li>
+                            <p key={index}>{section}</p>
                         ))}
-                    </ul>
+                    </div>
                 </div>
             </div>
             <Footer />
