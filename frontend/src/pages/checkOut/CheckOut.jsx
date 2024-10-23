@@ -48,7 +48,8 @@ const CheckOut = () => {
     totalPrice: "",
     currency: currentCurrencyCode,
     expectedDateOfDelivery: "",
-    checkoutTotal: ""
+    checkoutTotal: "",
+    cartProducts: cartProducts.products
   })
 
   // Form errors state
@@ -102,7 +103,7 @@ const CheckOut = () => {
       if (validateForm()) {
         setLoading(true)
 
-        axios.post(`${import.meta.env.VITE_BACKEND_URL}/flutterwave/make-payment`, formData,
+        axios.post(`${import.meta.env.VITE_BACKEND_URL}/paystack/make-payment`, formData,
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -110,29 +111,20 @@ const CheckOut = () => {
           }
         ).then((feedback) => {
           console.log(feedback)
-          if(feedback.data.error){
-              toast.error(feedback.data.error);
-          }else if(feedback.data.code == "error"){
-            toast.error(feedback.data.reason)
-          }
-          // const links = feedback.data.links;
+          // if(feedback.data.status == "success"){
+          //   window.location.href = feedback.data.data.link;
 
-          // Find the link with rel: "approve"
-          // const approveLink = links.find(link => link.rel === "approve");
+          // }else if(feedback.data.error){
+          //     toast.error(feedback.data.error);
+          // }else if(feedback.data.code == "error"){
+          //   toast.error(feedback.data.reason)
+          // }else {
+          //     // Handle the error if the approval link is missing
+          //     toast.error("There was an issue connecting to the payment provider. Please try again.");
+          //   }
 
-          // if (approveLink) {
-          //   // Redirect the user to PayPal approval page
-          //   window.location.href = approveLink.href;
-          // } else {
-          //   // Handle the error if the approval link is missing
-          //   toast.error("There was an issue connecting to the payment provider. Please try again.");
-          // }
-          if (feedback.data.data.link) {
-            // Redirect the user to PayPal approval page
-            window.location.href = feedback.data.data.link;
-          } else {
-            // Handle the error if the approval link is missing
-            toast.error("There was an issue connecting to the payment provider. Please try again.");
+          if(feedback.data.status){
+            window.location.href = feedback.data.data.authorization_url;
           }
 
 
@@ -490,13 +482,15 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
 
                 <div className="d-flex justify-content-between">
                   <p className="mb-2 fw-bold">Total price:</p>
-                  <p className="mb-2 fw-bold"> {(() => {
+                  <div className="mb-2 fw-bold"> {(() => {
                       if(!formData.country){
-                        return "..."
+                        return <div className="spinner-grow" style={{width: "15px", height: "15px"}} role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
                       }else{
                         return `${currencySymbols[selectedCurrency]}`; // Combine currency symbol with formatted total
                       }
-                    })()} {checkoutTotal}</p>
+                    })()} {checkoutTotal}</div>
                   
                 </div>
 

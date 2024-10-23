@@ -18,7 +18,7 @@ const Home = () => {
         // console.log(user)
         // Redirect logic before rendering the component
         if (user && user.is_user_logged && user.user.is_an_admin && user.user.user === "admin") {
-            navigate(`/admin/dashboard/${user.user.token}`);
+            navigate(`/beautybykiara/admin/dashboard/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqb2huc21pdGhAZ21haWwuY29tIjoiam9obnNtaXRoQGdtYWlsLmNvbSIsImpvaG4iOiJqb2hu`);
              // Prevent any content rendering before redirect
         }
        
@@ -43,7 +43,7 @@ const Home = () => {
 
 
 
-            <div
+            {/* <div
       style={{
         fontFamily: "Arial, sans-serif",
         backgroundColor: "#f4f4f4",
@@ -221,7 +221,7 @@ const Home = () => {
           </p>
         </div>
       </div>
-    </div>
+    </div> */}
             <Products showPaginationButtons={showPaginationButtons} />
             <FooterVideo />
             <Footer />
