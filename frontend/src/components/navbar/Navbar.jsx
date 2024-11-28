@@ -155,7 +155,7 @@ const Navbar = () => {
                       <Link to="/policies/delivery-policy" style={{ fontWeight: "bold", color: "white", textDecoration: "none" }}>Delivery policy</Link>
                     </div>
                     <div>
-                      <Link style={{ fontWeight: "bold", color: "white", textDecoration: "none" }}>Tracking</Link>
+                      <Link to="/order/tracking" style={{ fontWeight: "bold", color: "white", textDecoration: "none" }}>Tracking</Link>
                     </div>
                     <div style={{display: "flex", gap: "15px"}}>
                       <a style={{ color: "white" }} href="https://www.instagram.com/beauty_bykiaraa/" target="_blank">
@@ -179,13 +179,13 @@ const Navbar = () => {
                   <div className="dropdown" ref={dropdownRef}>
                     <button onClick={() => setDropdown(prev => !prev)} style={{ fontWeight: "bold" }} className="account-details-dropdown dropdown-toggle me-1 nav-link d-flex align-items-center">
                       <i className="fas fa-user-alt m-1 me-md-2"></i>
-                      <p className="d-none d-md-block mb-0">{use_auth.user.is_user_logged ? `Hi, ${use_auth.user.user.firstname}` : "Account"}</p>
+                      <p className="d-none d-md-block mb-0">{use_auth.user?.is_user_logged ? `Hi, ${use_auth.user?.user?.firstname}` : "Account"}</p>
                     </button>
                     {dropdown && (
                       <div className="account-details-dropdown-list-black">
                         <ul className="account-details-dropdown-list" type="none">
                         {
-                            use_auth.user.is_user_logged && use_auth.user.user.firstname &&  <div style={{backgroundColor: "purple", color: "white", margin: "10px", borderRadius: "5px", padding: "10px"}} className="d-block d-md-none">Hi, {use_auth.user.user.firstname}</div>
+                            use_auth.user?.is_user_logged && use_auth.user?.user?.firstname &&  <div style={{backgroundColor: "purple", color: "white", margin: "10px", borderRadius: "5px", padding: "10px"}} className="d-block d-md-none">Hi, {use_auth.user.user.firstname}</div>
                               
                             
                           }
@@ -204,12 +204,12 @@ const Navbar = () => {
                           <li>
                             <Link to={use_auth.user.is_user_logged ? "/user-account" : "/login"} className="me-1 nav-link d-flex align-items-center" style={{gap: "12px"}}> <i className="fa-regular fa-user " style={{fontSize: "20px"}}></i>My Account</Link>
                           </li>
-                          <li>
+                          {/* <li>
                             <Link className="me-1 nav-link d-flex align-items-center" style={{gap: "12px"}}> <i className="fa-regular fa-heart" style={{fontSize: "20px"}}></i>Wishlist</Link>
-                          </li>
-                          <li>
+                          </li> */}
+                          {/* <li>
                             <Link className="me-1 nav-link d-flex align-items-center" style={{gap: "12px"}}> <i className="fa-regular fa-message"style={{fontSize: "20px"}}></i> Live chat</Link>
-                          </li>
+                          </li> */}
                           {use_auth.user.is_user_logged && <span>
                             <hr />
                             <li style={{paddingTop: "0", display: "flex", justifyContent: "center"}}>
@@ -269,7 +269,7 @@ const Navbar = () => {
                       searchState.searchData.map((product, index) => {
                           // console.log(product)
                           // return <div key={index} className="admin-search-result-container" onClick={()=> {setSearchState((prev) => ({...prev, isSearching: false, searchLoading: false, wordNotFound: null})), setSelectedProduct(product)}}>
-                          return <div key={index} className="admin-search-result-container" onClick={()=> {navigate(`/product/${product.id}`)}}>
+                          return <div key={index} className="admin-search-result-container" onClick={()=> {setSearchState({isSearching: false, searchLoading: false, searchData: null, wordNotFound: null}), navigate(`/product/${product.id}`)}}>
                               <img src={product.productImage} alt="" width="50px"  />
                               <p><b>{product.productName}</b></p>
                           </div>

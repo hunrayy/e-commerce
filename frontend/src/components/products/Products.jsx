@@ -20,16 +20,20 @@ const Products = ({ showPaginationButtons }) => {
     const { cartProducts, addToCart} = useContext(CartContext);
     const [allProducts, setAllProducts] =  useState({
         products: [],
-        products_loading: false
+        products_loading: true
     })
     const [totalProducts, setTotalProducts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const [perPage, setPerPage] = useState(2);
+    const [perPage, setPerPage] = useState(12);
     // const [cartItems, setCartItems] = useState([]);
 
     const fetchProducts = async (page) => {
         console.log(currentPage, perPage)
         try {
+            // setAllProducts((prev) => ({
+            //     ...prev,
+            //     products_loading: true
+            // }))
             const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/get-all-products`, {
                 params: {
                     perPage: perPage,
@@ -50,7 +54,11 @@ const Products = ({ showPaginationButtons }) => {
             // const { data } = response.data;
             // setTotalProducts(data.total); // Total number of products
         } catch (error) {
-            console.error('Error fetching products:', error);
+            // console.error('Error fetching products:', error);
+            setAllProducts((prev) => ({
+                ...prev,
+                products_loading: false
+            }))
         }finally{
             // Clear the loader timeout and stop the loader when the request completes
             setAllProducts(prev => ({
@@ -63,7 +71,7 @@ const Products = ({ showPaginationButtons }) => {
     // Handler for next page
     const handleNextPage = () => {
         if (currentPage < Math.ceil(totalProducts.total / perPage)) {
-            console.log()
+            window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll to top
             setCurrentPage((prevPage) => {
                 const newPage = prevPage + 1;
                 // console.log(newPage); // This will now log the correct new page
@@ -76,6 +84,7 @@ const Products = ({ showPaginationButtons }) => {
     const handlePreviousPage = () => {
 
         if (currentPage > 1) {
+            window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll to top
             setCurrentPage((prevPage) => {
                 const newPage = prevPage - 1;
                 return newPage;
@@ -84,6 +93,7 @@ const Products = ({ showPaginationButtons }) => {
     };
 
     const handlePaginate = (index) => {
+        window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll to top
         setCurrentPage((prevPage) => {
             return index;
         });
@@ -91,25 +101,6 @@ const Products = ({ showPaginationButtons }) => {
 
     useEffect(()=> {
         fetchProducts()
-        // setAllProducts({
-        //     products: [],
-        //     products_loading: true
-        // })
-
-        // let loaderTimeout;
-    
-        // Set a timeout to show the loader after 500ms
-        // loaderTimeout = setTimeout(() => {
-        //     setAllProducts(prevState => ({
-        //         ...prevState,
-        //         products_loading: true // Only show loader if data is taking long
-        //     }));
-        // }, 300); // You can adjust this time (500ms) to control the delay for showing the loader
-
-
-        // get cart items
-        // const getCartItems = JSON.parse(localStorage.getItem("cart_items"))
-        // setCartItems(getCartItems);
 
 
     }, [currentPage, perPage])
@@ -135,6 +126,11 @@ const Products = ({ showPaginationButtons }) => {
 
 
         <section>
+                    {showPaginationButtons && <div style={{display: "flex", justifyContent: "space-between"}}>
+                        <p><Link to='/' style={{fontWeight: "bold", color: "black", textDecoration: "none"}}>Home</Link> &gt; <Link to='/collections/all' style={{fontWeight: "bold", color: "black", textDecoration: "none"}}>all products</Link></p>
+                        <p>View all | {allProducts.products.length} products</p>
+
+                    </div>}
             <div className="container my-5 product-page-container">
                
                 {allProducts.products_loading && <HomePageLoader />}
@@ -144,7 +140,7 @@ const Products = ({ showPaginationButtons }) => {
                         // console.log(product)
                         // const inCart = cartItems?.some(item => item.id === product.id)
                         // const isRecentlyAdded = cartProducts.recentlyAddedProducts.includes(product.id);
-                        const convertedPrice = Number(convertCurrency(product.productPriceInNaira, 'NGN', selectedCurrency)).toLocaleString();
+                        const convertedPrice = Number(convertCurrency(product.productPriceInNaira12Inches, 'NGN', selectedCurrency)).toLocaleString();
                         const currencySymbol = currencySymbols[selectedCurrency];
                         return (<div key={index} className="col-lg-3 col-md-6 col-sm-6 col-6 single-item-container"  onClick={()=>navigateToProduct(product.id)}>
                         <div className="my-2">
@@ -172,7 +168,7 @@ const Products = ({ showPaginationButtons }) => {
                         </div>
                     </div> */}
                     {
-                        showPaginationButtons && allProducts.products.length > 0 && <div style={{display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column"}}>
+                        showPaginationButtons && allProducts.products.length > 0 && allProducts.products.length > perPage &&  <div style={{display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column"}}>
                             <p><span>Page {currentPage} of {Math.ceil(totalProducts.total / perPage)}</span></p>
                             <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
                                 <button className='btn btn-dark' onClick={handlePreviousPage} disabled={currentPage < 2}>&laquo;</button>

@@ -15,7 +15,7 @@ const AllProducts = () => {
     const token = Cookies.get("authToken");
     const [allProducts, setAllProducts] = useState({
         products: [],
-        products_loading: false,
+        products_loading: true,
     });
     const [totalProducts, setTotalProducts] = useState([])
     const [selectedProduct, setSelectedProduct] = useState(null); // Track selected product for modal
@@ -27,11 +27,12 @@ const AllProducts = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [debounceTimeout, setDebounceTimeout] = useState(null);
     const [currentPage, setCurrentPage] = useState(1)
-    const [perPage, setPerPage] = useState(2);
+    const [perPage, setPerPage] = useState(12);
 
 
 
     const handleCloseModal = () => {
+        setPage("allProducts")
         setSelectedProduct(null);
     };
 
@@ -249,7 +250,7 @@ const AllProducts = () => {
                         {allProducts.products_loading && <BasicLoader />}
                         {allProducts.products?.map((product) => {
                             console.log(product)
-                            const productPrice = parseFloat(product.productPriceInNaira);
+                            const productPrice = parseFloat(product.productPriceInNaira12Inches);
                             const convertedPrice = convertCurrency(productPrice, "NGN", selectedCurrency);
                             const currencySymbol = currencySymbols[selectedCurrency];
                             const firstImage = product.productImage;
@@ -283,7 +284,7 @@ const AllProducts = () => {
                         })}
                         {/* pagination button */}
                         {
-                            allProducts.products.length > 0 && <div style={{display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column"}}>
+                            allProducts.products.length > 0 && allProducts.products.length > perPage && <div style={{display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column"}}>
                                 <p><span>Page {currentPage} of {Math.ceil(totalProducts.total / perPage)}</span></p>
                                 <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
                                     <button className='btn btn-dark' onClick={handlePreviousPage} disabled={currentPage < 2}>&laquo;</button>
@@ -360,8 +361,8 @@ const AllProducts = () => {
                     <div className="card-body">
                         <div className="card-title">
                             <h5>
-                                Price: {currencySymbols[selectedCurrency]}
-                                {convertCurrency(parseFloat(selectedProduct.productPriceInNaira), "NGN", selectedCurrency)}
+                                Price(12 inches): {currencySymbols[selectedCurrency]}
+                                {convertCurrency(parseFloat(selectedProduct.productPriceInNaira12Inches), "NGN", selectedCurrency).toLocaleString()}
                             </h5>
                         </div>
                         <p className="card-text">{selectedProduct.productName}</p>

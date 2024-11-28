@@ -12,6 +12,7 @@ use App\Http\Controllers\CurrencyController;
 use App\Models\Order;
 use App\Models\User; 
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 
@@ -24,8 +25,9 @@ class OrderController extends Controller
     //
 
     public function saveProductToDbAfterPayment($detailsToken){
-        try{
-            
+        
+        $request = request();
+        try{            
             // $detailsToken = $request->header('detailsToken');
 
             // Verify JWT Token
@@ -48,7 +50,7 @@ class OrderController extends Controller
             $expectedDateOfDelivery = $verifyToken->expectedDateOfDelivery;
             $transactionId = $verifyToken->transactionId;
             // $products = $request->input('cartProducts'); // Assuming products are passed from the frontend
-            $products = $verifyToken->cartProducts;
+            $products = json_decode($verifyToken->cartProducts);
 
             // Fetch user_id from the email passed in the token
             $user = User::where('email', $email)->firstOrFail(); 
@@ -56,7 +58,15 @@ class OrderController extends Controller
 
 
             // Create order details
-            $tracking_id = rand(1000000000, 9999999999); // Generates a random 10-digit number
+            $tracking_id = random_int(1000000000, 9999999999); // Generates a random 10-digit number
+
+            // Check in the database for uniqueness
+            if (Order::where('tracking_id', $tracking_id)->exists()) {
+                // Regenerate if duplicate
+                $tracking_id = random_int(1000000000, 9999999999);
+            }
+
+
             $numberFormatOfTotalPrice = str_replace(',', '', $totalPrice); // Remove commas
             $numberFormatOfSubtotal = str_replace(',', '', $subtotal); // Remove commas
             $numberFormatOfShippingFee = str_replace(',', '', $shippingFee); // Remove commas
@@ -89,7 +99,7 @@ class OrderController extends Controller
             $allPendingOrders = Order::where('status', 'pending')->orderBy('created_at', 'desc')->get()->toArray();
 
             //save fetched orders to cache
-            Redis::set('pendingOrders', json_encode($allPendingOrders, true));
+            Cache::put('pendingOrders', json_encode($allPendingOrders, true));
 
 
             // Send a confirmation email to the user
@@ -177,7 +187,7 @@ class OrderController extends Controller
             //fetch all fresh orders for the user that just made payment and update the cache
             $updatedOrders = Order::where('user_id', $request->user_id)->orderBy('created_at', 'desc')->get()->toArray();
 
-            Redis::set($request->user_id . '_orders', json_encode($updatedOrders, true));
+            Cache::put($request->user_id . '_orders', json_encode($updatedOrders, true));
 
             return response()->json([
                 'message' => 'Product(s) ordered successfully saved to DB',
@@ -201,7 +211,7 @@ class OrderController extends Controller
             $query = $request->query('status');
             if($query == "pending"){
                 //check if pending orders are saved in cache
-                $cachedOrders = Redis::get('pendingOrders');
+                $cachedOrders = Cache::get('pendingOrders');
                 if($cachedOrders){
                     return response()->json([
                         "message" => "all pending orders successfully retrieved from cache",
@@ -213,7 +223,7 @@ class OrderController extends Controller
                     $allPendingOrders = Order::where('status', 'pending')->orderBy('created_at', 'desc')->get()->toArray();
 
                     //save fetched orders to cache
-                    Redis::set('pendingOrders', json_encode($allPendingOrders, true));
+                    Cache::put('pendingOrders', json_encode($allPendingOrders, true));
 
                     return response()->json([
                         "message" => "all pending orders successfully retrieved from database",
@@ -225,7 +235,7 @@ class OrderController extends Controller
 
             }else if($query == "outForDelivery"){
                 //check if out-for-delivery orders are saved in cache
-                $cachedOrders = Redis::get('outForDeliveryOrders');
+                $cachedOrders = Cache::get('outForDeliveryOrders');
 
                 if($cachedOrders){
                     return response()->json([
@@ -238,7 +248,7 @@ class OrderController extends Controller
                     $allOutForDeliveryOrders = Order::where('status', 'outForDelivery')->orderBy('updated_at', 'desc')->get()->toArray();
 
                     //save fetched orders to cache
-                    Redis::set('outForDeliveryOrders', json_encode($allOutForDeliveryOrders, true));
+                    Cache::put('outForDeliveryOrders', json_encode($allOutForDeliveryOrders, true));
                     
                     return response()->json([
                         "message" => "all out-for-delivery orders successfully retrieved from database",
@@ -248,7 +258,7 @@ class OrderController extends Controller
                 }
             }else if($query == "delivered"){
                 //check if delivered orders are saved in cache
-                $cachedOrders = Redis::get('deliveredOrders');
+                $cachedOrders = Cache::get('deliveredOrders');
 
                 if($cachedOrders){
                     return response()->json([
@@ -261,7 +271,7 @@ class OrderController extends Controller
                     $allDeliveredOrders = Order::where('status', 'delivered')->orderBy('created_at', 'desc')->get()->toArray();
 
                     //save fetched orders to cache
-                    Redis::set('deliveredOrders', json_encode($allDeliveredOrders, true));
+                    Cache::put('deliveredOrders', json_encode($allDeliveredOrders, true));
                     
                     
                     return response()->json([
@@ -316,25 +326,32 @@ class OrderController extends Controller
             $order->status = 'outForDelivery';
             $order->save();
 
+            
+
             //fetch all fresh pending orders from database
             $newAllPendingOrders = Order::where('status', 'pending')->orderBy('updated_at', 'desc')->get()->toArray();
 
             //save fetched orders to cache
-            Redis::set('pendingOrders', json_encode($newAllPendingOrders, true));
+            Cache::put('pendingOrders', json_encode($newAllPendingOrders, true));
 
 
             //fetch all fresh out-for-delivery orders from database
             $newAllOutForDeliveryOrders = Order::where('status', 'outForDelivery')->orderBy('updated_at', 'desc')->get()->toArray();
 
             //save fetched orders to cache
-            Redis::set('outForDeliveryOrders', json_encode($newAllOutForDeliveryOrders, true));
+            Cache::put('outForDeliveryOrders', json_encode($newAllOutForDeliveryOrders, true));
 
             //fetch all fresh delivered orders from database
             $newAllOutForDeliveredOrders = Order::where('status', 'delivered')->orderBy('updated_at', 'desc')->get()->toArray();
 
             //save fetched orders to cache
-            Redis::set('deliveredOrders', json_encode($newAllOutForDeliveredOrders, true));
+            Cache::put('deliveredOrders', json_encode($newAllOutForDeliveredOrders, true));
             
+            $userOrder = Order::where('user_id', $order->user_id)->orderBy('created_at', 'desc')->get();
+            
+            //save fetched orders to cache
+            Cache::put($order->user_id . '_orders', json_encode($userOrder));
+
 
             //send a notification via mail to the user
             $subject = 'Order Status Update'; //subject of mail
@@ -451,13 +468,19 @@ class OrderController extends Controller
                 $newAllDeliveredOrders = Order::where('status', 'delivered')->orderBy('updated_at', 'desc')->get()->toArray();
     
                 //save fetched orders to cache
-                Redis::set('deliveredOrders', json_encode($newAllDeliveredOrders, true));
+                Cache::put('deliveredOrders', json_encode($newAllDeliveredOrders, true));
     
                 //fetch all fresh out-for-delivery orders from database
                 $newAllOutForDeliveryOrders = Order::where('status', 'outForDelivery')->orderBy('updated_at', 'desc')->get()->toArray();
     
                 //save fetched orders to cache
-                Redis::set('outForDeliveryOrders', json_encode($newAllOutForDeliveryOrders, true));
+                Cache::put('outForDeliveryOrders', json_encode($newAllOutForDeliveryOrders, true));
+
+                $userOrder = Order::where('user_id', $order->user_id)->orderBy('created_at', 'desc')->get();
+            
+                //save fetched orders to cache
+                Cache::put($order->user_id . '_orders', json_encode($userOrder));
+
                 
     
                 //send a notification via mail to the user
@@ -532,5 +555,32 @@ class OrderController extends Controller
                 "reason" => $e->getMessage()
             ]);
         }
+    }
+
+    public function trackOrder(Request $request){
+        try{
+            $request->validate([
+                'trackingId' => 'required'
+            ]);
+            $trackingId = $request->query('trackingId');
+            $trackOrder = Order::where('tracking_id', $trackingId)->first();
+            if(!$trackOrder){
+                return response()->json([
+                    'code' => 'error',
+                    'message' => "Order with tracking id: $trackingId does not exist"
+                ]);
+            }
+            return response()->json([
+                'code' => 'success',
+                'message' => "Order with tracking id: $trackingId fetched successfully",
+                'data' => $trackOrder
+            ]); 
+        }catch(\Exception $e){
+            return response()->json([
+                'code' => 'error',
+                'message' => "An error occured while tracking order, $e->getMessage()"
+            ]);
+        }
+
     }
 }

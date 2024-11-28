@@ -6,11 +6,13 @@ import './pendingOrders.css'
 import axios from 'axios'
 import Cookies from 'js-cookie'
 import { useState, useEffect, useContext } from 'react'
+import BasicLoader from '../../loader/BasicLoader'
 import { toast } from 'react-toastify'
 import { CurrencyContext } from '../../all_context/CurrencyContext';
     const PendingOrders = () => {
     const { selectedCurrency, convertCurrency, currencySymbols } = useContext(CurrencyContext);
     const [pendingOrders, setPendingOrders] = useState([])
+    const [pendingOrdersLoading, setPendingOrdersLoading] = useState(true)
     const [singleOrder, setSingleOrder] = useState(null)
     const [outForDeliveryModal, setOutForDeliveryModal] = useState(null)
     const [trackingId, setTrackingId] = useState('');
@@ -18,6 +20,7 @@ import { CurrencyContext } from '../../all_context/CurrencyContext';
     const [verificationText, setVerificationText] = useState('');
     const [verificationTextError, setVerificationTextError] = useState('');
     const [isLoading, setIsLoading] = useState(false)
+    
 
     
 
@@ -32,6 +35,7 @@ import { CurrencyContext } from '../../all_context/CurrencyContext';
             }
         })
         console.log(feedback)
+        setPendingOrdersLoading(false)
         setPendingOrders(feedback.data.data)
     }
     const handleViewMorePendingOrders = (order) => {
@@ -115,7 +119,7 @@ import { CurrencyContext } from '../../all_context/CurrencyContext';
             // setOutForDeliveryModal(null); // Close modal after submission
         }
     };
-    if(pendingOrders.length < 1){
+    if(!pendingOrdersLoading && pendingOrders.length < 1){
         return         <div className="no-order-admin-container">
         <div className="no-order-admin-content">
           <h1>No Pending Orders</h1>
@@ -125,6 +129,11 @@ import { CurrencyContext } from '../../all_context/CurrencyContext';
           </div>
         </div>
       </div>
+    }
+    if(pendingOrdersLoading){
+        return <div style={{width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center"}}>
+            <BasicLoader />
+        </div>
     }
 
     
@@ -147,7 +156,7 @@ import { CurrencyContext } from '../../all_context/CurrencyContext';
 
                 return <tbody key={index}>
                     <tr>
-                    <th scope="row">{index + 1}</th>
+                    <th scope="row">{pendingOrders.length - index}</th>
                     <td>{pendingOrder.tracking_id}</td>
                     {/* <td>{pendingOrder.email}</td> */}
                     <td>{formatDate(pendingOrder.created_at)}</td>
@@ -174,10 +183,10 @@ import { CurrencyContext } from '../../all_context/CurrencyContext';
                         <div className='col-md-4 border py-2'>
                             <h5>User Profile</h5>
                             <p>
-                                <b>Firstname:</b> {singleOrder.firstname}<br/>
-                                <b>Lastname:</b> {singleOrder.lastname}<br/>
+                                <b>First name:</b> {singleOrder.firstname}<br/>
+                                <b>Last name:</b> {singleOrder.lastname}<br/>
                                 <b>Email:</b> {singleOrder.email}<br/>
-                                <b>Phone Number:</b> {singleOrder.phoneNumber}<br/>
+                                <b>Phone number:</b> {singleOrder.phoneNumber}<br/>
                             </p>
                         </div>
                         <div className='col-md-4 border py-2'>
@@ -227,7 +236,7 @@ import { CurrencyContext } from '../../all_context/CurrencyContext';
                                     <h3 style={{margin: "0", color: "#333", fontSize: "18px"}}>{product.productName}</h3>
                                     <p style={{margin: "5px 0", color: "#777", fontSize: "14px"}}>Length: {product.lengthPicked}</p>
                                     <p style={{margin: "5px 0", color: "#777", fontSize: "14px"}}>Quantity: {product.quantity}</p>
-                                    <p style={{margin: "5px 0", color: "#777", fontSize: "14px"}}>Price: {product.updatedPrice}</p>
+                                    <p style={{margin: "5px 0", color: "#777", fontSize: "14px"}}>Price: {singleOrder.currency}{product.updatedPrice}</p>
                                 </div>
                                 </div>
                             })
@@ -262,7 +271,7 @@ import { CurrencyContext } from '../../all_context/CurrencyContext';
                                 Please ensure that all the necessary preparations for shipment are complete before proceeding. 
                             </p>
                             <p>
-                                This action cannot be undone, and the order will officially enter the delivery phase. 
+                                This action cannot be undone, and the order will officially enter the "out-for-delivery" phase. 
                             </p>
                         </div>
                         <form style={{background: "#f4f4f4"}} className='p-3' onSubmit={handleSubmit} method='post'>

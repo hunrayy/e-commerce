@@ -30,6 +30,7 @@ class VerifyJWTToken
         try {
             // Split the bearer token
             $bearerToken = explode(' ', $authorization)[1];
+            
 
             // Verify the token
             $decodedToken = JWT::decode($bearerToken, new Key(env("JWT_SECRET"), 'HS256'));
@@ -45,14 +46,14 @@ class VerifyJWTToken
             return response()->json([
                 'code' => 'invalid-jwt',
                 'message' => 'Token has expired'
-            ], 401);
+            ]);
 
         } catch (Exception $e) {
             Log::error('JWT error: ' . $e->getMessage()); // Log the error for debugging
             return response()->json([
                 'code' => 'invalid-jwt',
                 'message' => 'Invalid JWT or other error: ' . $e->getMessage()
-            ], 401);
+            ]);
         }
     }
 }
