@@ -27,17 +27,23 @@ export const CurrencyProvider = ({ children }) => {
   const fetchExchangeRates = async () => {
     try {
       const response = await axios.get('https://api.exchangerate-api.com/v4/latest/NGN');
+      console.log(response)
 
       setRates(response.data.rates);
       setIsRatesFetched(true); // Set rates as fetched
     } catch (error) {
-      console.error('Error fetching exchange rates:', error);
+      console.log('Error fetching exchange rates:', error);
     }
   };
 
-  const fetchCurrencyData = async () => {
+
+  const fetchCurrencyData = async (retryCount = 3) => {
     try {
       const response = await axios.get('https://restcountries.com/v3.1/all');
+      // const response = await axios.get('http://api.worldbank.org/v2/country?format=json')
+
+      console.log(response.data)
+      
       const currencyData = {};
       // const codes = {}; // New object to hold currency codes
 
@@ -68,9 +74,31 @@ export const CurrencyProvider = ({ children }) => {
       setCurrencyNames(names);
       // setCurrencyCodes(codes); // Set the currency codes in state
     } catch (error) {
-      console.error('Error fetching currency data:', error);
+      // console.log('Error fetching currency data:', error);
+      if (retryCount > 0) {
+        console.warn(`Retrying... Attempts left: ${retryCount - 1}`);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Delay before retrying
+        return fetchCurrencyData(retryCount - 1); // Retry with decremented count
+      } else {
+        console.error('Error fetching currency data:', error);
+        alert('Failed to fetch currency data. Please check your internet connection and try again.');
+      }
     }
   };
+
+  // const fetchCurrencyData = async () => {
+  //   try {
+  //     const response = await fetch('http://api.worldbank.org/v2/country?format=json');
+  //     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  //     const data = await response.json();
+  //     console.log(data);
+  //     return data;
+  //   } catch (error) {
+  //     console.error('Error fetching currency data:', error);
+  //   }
+  // };
+  
+  
 
   const convertCurrency = (amount, fromCurrency = 'NGN', toCurrency = selectedCurrency) => {
     if (!isRatesFetched || !rates[fromCurrency] || !rates[toCurrency]) {
