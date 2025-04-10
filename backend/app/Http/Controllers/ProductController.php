@@ -294,11 +294,12 @@ class ProductController extends Controller
 
         }catch (\Exception $e) {
             // Handle the exception
-            return response()->json([
-                'message' => 'Error creating product.',
-                'code' => 'error',
-                'reason' => $e->getMessage()
-            ]);
+            // return response()->json([
+                //     'message' => 'Error creating product.',
+                //     'code' => 'error',
+                //     'reason' => $e->getMessage()
+                // ]);
+                return false;
         }
     }
 
@@ -650,7 +651,7 @@ class ProductController extends Controller
     // }
 
 
-    public function getPublicIdFromUrl($secureUrl) {
+    public static function getPublicIdFromUrl($secureUrl) {
         // Parse the URL
         $urlParts = parse_url($secureUrl);
         

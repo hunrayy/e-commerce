@@ -18,14 +18,6 @@ return new class extends Migration
             $table->string('image');
             $table->timestamps();
         });
-
-        // Bulk insert the categories
-        // ProductsCategory::insert([
-        //     ['name' => 'Donor raw hair'],
-        //     ['name' => 'Virgin hairs'],
-        //     ['name' => 'Hair installation'],
-        //     ['name' => 'Lash extensions'],
-        // ]);
     }
 
     /**

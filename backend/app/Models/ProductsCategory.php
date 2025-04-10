@@ -9,7 +9,7 @@ class ProductsCategory extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'image'];
 
     // Define the table name to avoid Laravel's pluralization
     protected $table = 'products_category'; 
