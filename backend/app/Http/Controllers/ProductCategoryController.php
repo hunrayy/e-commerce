@@ -206,7 +206,7 @@ class ProductCategoryController extends Controller
             DB::commit();
     
             // Refresh cache after deleting
-            $allCategories = ProductsCategory::all()->toArray();
+            $allCategarories = ProductsCategory::all()->toArray();
             Cache::put('productCategories', $allCategories, now()->addWeek()); // Cache for 7 days
     
             return response()->json([

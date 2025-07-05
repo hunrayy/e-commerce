@@ -25,7 +25,7 @@ import "./cart.css";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
 import { Link } from "react-router-dom";
-import { useState, useEffect, useContext, useMemo } from "react";
+import React, { useState, useEffect, useContext, useMemo } from "react";
 import { CartContext } from "./CartContext";
 import { CurrencyContext } from "../../components/all_context/CurrencyContext";
 import CartTotal, { calculateTotal } from "./CartTotal";
@@ -185,17 +185,59 @@ const Cart = () => {
                         {/* <div style={{display: "flex"}}> */}
                           <div className="cart-text-wrapper">
                             <div className="d-flex align-items-center" style={{ gap: "10px" }}>
-                              <button className="cart-increase-decrease-btn" onClick={() => decreaseButton(each_item)}><i className="fa-solid fa-minus"></i></button>
+                              <button className="cart-increase-decrease-btn" onClick={() => decreaseButton(each_item)} style={{cursor: each_item.quantity == 1 && "not-allowed"}}><i className="fa-solid fa-minus"></i></button>
                               <span>{each_item.quantity}</span>
                               <button className="cart-increase-decrease-btn" onClick={() => increaseButton(each_item)}><i className="fa-solid fa-plus"></i></button>
                             </div>
-                            <div className="">{currencySymbol}
-                              {lengthsOfHair.map((length, index) =>
+                              {/* {lengthsOfHair.map((length, index) =>
+                              
                                 each_item.lengthPicked === length &&
                                 convertCurrency(productPrices[index], import.meta.VITE_CURRENCY_CODE, selectedCurrency).toLocaleString()
-                              )}
-                              
-                            </div>
+                                * each_item.quantity
+                              )} */}
+<div className="">
+  {lengthsOfHair.map((length, index) => {
+    const normalizeLength = (str) =>
+      str.replace(/[\s,]+/g, '').replace(/["']/g, '');
+
+    console.log(
+      "Comparing normalized:",
+      normalizeLength(each_item.lengthPicked),
+      "===",
+      normalizeLength(length)
+    );
+
+    if (normalizeLength(each_item.lengthPicked) === normalizeLength(length)) {
+      console.log("✅ Matched length:", length);
+
+      const rawPrice = productPrices[index];
+      console.log("Product price:", rawPrice);
+
+      const unitPrice = convertCurrency(
+        rawPrice,
+        import.meta.VITE_CURRENCY_CODE,
+        selectedCurrency
+      );
+      console.log("Converted unit price:", unitPrice);
+
+      if (unitPrice === null || unitPrice === undefined) return null;
+
+      const total = unitPrice * each_item.quantity;
+      console.log("Final total:", total);
+
+      return (
+        <React.Fragment key={index}>
+          {currencySymbol}{total.toLocaleString()}
+        </React.Fragment>
+      );
+    }
+
+    return null;
+  })}
+</div>
+
+
+
                             <button className="btn btn-light border text-danger" onClick={() => setRemoveItemFromCartModal({show: true, eachItem: each_item})}> Remove <i className="fa-solid fa-trash"></i></button>
                         {/* <div style={{}}>
                         </div> */}
@@ -210,7 +252,7 @@ const Cart = () => {
                 <div className="border-top pt-4 mx-4 mb-4">
                   <p><i className="fas fa-truck text-muted fa-lg"></i> Delivery charges apply based on your location</p>
                   <p className="text-muted">
-                    Delivery charges will apply based on your location and the weight of your order. Please refer to our <Link to="/policies/delivery-policy">delivery policy</Link> for detailed information on shipping rates and estimated delivery times. We appreciate your understanding and thank you for shopping with us!
+                    Delivery charges will apply based on your location and the weight of your order. Please refer to our <Link to="/policies/delivery-policy" style={{color: "purple"}}>delivery policy</Link> for detailed information on shipping rates and estimated delivery times. We appreciate your understanding and thank you for shopping with us!
                   </p>
                 </div>
               </div>
@@ -246,6 +288,7 @@ const Cart = () => {
                     <p className="mb-2">Total price:</p>
                     <p className="mb-2 fw-bold">{<CartTotal />}</p>
                   </div>
+                  <small><Link style={{color: "purple"}} to="/policies/shipping-policy">Shipping</Link> calculated at checkout.</small>
                   <div className="mt-3">
                     <button onClick={()=> {use_auth.user.is_user_logged == false ? navigate("/login", {replace: true}) : navigate("/products/checkout", {replace: true})}} className="btn w-100 shadow-0 mb-2" style={{ backgroundColor: "purple", color: "white" }}>{use_auth.user.is_user_logged == false ? "Login to check out" : "Proceed to checkout"}</button>
                     <Link to="/" className="btn btn-light w-100 border mt-2">Back to home</Link>

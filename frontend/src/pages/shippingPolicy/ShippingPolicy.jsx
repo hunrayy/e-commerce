@@ -1,69 +1,55 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios"; // Import axios for API calls
-import BasicLoader from '../../components/loader/BasicLoader'
-import Navbar from '../../components/navbar/Navbar'
-import './shippingPolicy.css'
-import Footer from '../../components/footer/Footer'
+import axios from "axios";
+import BasicLoader from '../../components/loader/BasicLoader';
+import Navbar from '../../components/navbar/Navbar';
+import './shippingPolicy.css';
+import Footer from '../../components/footer/Footer';
 import { toast } from "react-toastify";
-const ShippingPolicy = () => {
-    const [isLoading, setIsLoading] = useState(true)
-    // Initial policy data
-    const [policySections, setPolicySections] = useState([
-        null,
-        null,
-        null
-    ]);
+import DOMPurify from 'dompurify';
 
-    const [policyTitle, setPolicyTitle] = useState(null); // Title of the policy
-    
-    useEffect(()=> {
+const ShippingPolicy = () => {
+    const [isLoading, setIsLoading] = useState(true);
+    const [policyContent, setPolicyContent] = useState(""); // updated to hold raw HTML string
+
+    useEffect(() => {
         let loaderTimeout;
-        // Set the loader to be shown if data takes more than 200ms
-        // loaderTimeout = setTimeout(() => {
-        //     setIsLoading(true)
-        // }, 200);
+
         axios.get(`${import.meta.env.VITE_BACKEND_URL}/user/get-page`, {
             params: {
-                page: "shippingPolicy" 
+                page: "shippingPolicy"
             }
-        }).then((feedback) => {
-            console.log(feedback)
-            setIsLoading(false)
-            if(feedback.data.code === "success"){
-                setPolicyTitle(feedback.data.data.title)
-                setPolicySections([
-                    feedback.data.data.firstSection,
-                    feedback.data.data.secondSection,
-                    feedback.data.data.thirdSection,
-
-                ])
-            }else{
-                toast.error(feedback.data.message)
+        }).then((response) => {
+            setIsLoading(false);
+            if (response.data.code === "success") {
+                setPolicyContent(response.data.data); // entire HTML content
+            } else {
+                toast.error(response.data.message);
             }
-           
-        }).finally(()=> {
-            clearTimeout(loaderTimeout)
-            setIsLoading(false)
-        })
-    }, [])
+        }).catch((err) => {
+            toast.error("Failed to load shipping policy.");
+        }).finally(() => {
+            clearTimeout(loaderTimeout);
+            setIsLoading(false);
+        });
+    }, []);
 
     return (
         <div>
             <Navbar />
             <div className="shipping-policy-container">
                 <div className="shipping-policy-wrapper">
-                    {isLoading && <div style={{display: "flex", justifyContent: "center", alignItems: "center", width: "100%", height: "calc(90vh - var(--marginAboveTop))"}}>
-                        <BasicLoader />
-                    </div>}
-                    {/* Title of the policy */}
-                    <p>{policyTitle}</p>
-
-                    {/* List of policy sections */}
-                    <div>
-                        {policySections.map((section, index) => (
-                            <p key={index}>{section}</p>
-                        ))}
-                    </div>
+                    {isLoading ? (
+                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%", height: "calc(90vh - var(--marginAboveTop))" }}>
+                            <BasicLoader />
+                        </div>
+                    ) : (
+                        // Render raw HTML safely
+                        <div
+                            dangerouslySetInnerHTML={{
+                                __html: DOMPurify.sanitize(policyContent),
+                            }}
+                        ></div>
+                    )}
                 </div>
             </div>
             <Footer />
@@ -71,10 +57,7 @@ const ShippingPolicy = () => {
     );
 };
 
-
 export default ShippingPolicy;
-
-
 
 
 

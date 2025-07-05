@@ -1,5 +1,4 @@
-
-
+import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect, useContext } from "react"
 import productsStore from "./products.json"
 import "./products.css"
@@ -10,206 +9,398 @@ import { Link } from "react-router-dom"
 import axios from "axios"
 import HomePageLoader from "../homePageLoader/HomePageLoader"
 import jsonProducts from "./products.json"
-
-
+import PaginationButtons from "../paginationButtons/PaginationButtons"
 
 
 const Products = ({ productCategory, showPaginationButtons }) => {
-    const navigate = useNavigate()
-    const { selectedCurrency, convertCurrency, currencySymbols } = useContext(CurrencyContext);
-    const { cartProducts, addToCart} = useContext(CartContext);
-    const [allProducts, setAllProducts] =  useState({
-        products: [],
-        products_loading: true
-    })
-    const [totalProducts, setTotalProducts] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [perPage, setPerPage] = useState(12);
-    // const [cartItems, setCartItems] = useState([]);
+  const navigate = useNavigate();
+  const { selectedCurrency, convertCurrency, currencySymbols, ratesFetched } = useContext(CurrencyContext);
+  const { cartProducts, addToCart } = useContext(CartContext);
 
-    const fetchProducts = async (page) => {
-        // console.log(currentPage, perPage)
-        console.log(productCategory)
-        try {
-            // setAllProducts((prev) => ({
-            //     ...prev,
-            //     products_loading: true
-            // }))
-            const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/get-all-products`, {
-                params: {
-                    perPage: perPage,
-                    page: currentPage,
-                    ...(productCategory && { productCategory: productCategory })  // Conditionally adding the category if it exists
-                }
-            });
-            console.log(response)
-            if (response.data.code == "success"){
-                setCurrentPage(response.data.data.current_page)
-                setAllProducts((prev) => ({
-                    ...prev,
-                    products_loading: false,
-                    products: response.data.data.data
-                }))
-                setTotalProducts(response.data.data); // Set products from paginated result
-                console.log(totalProducts)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(12);
+
+  // Query key must be unique to every fetch
+  const queryKey = ['products', currentPage, perPage, productCategory];
+
+  const fetchProducts = async () => {
+    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/get-all-products`, {
+      params: {
+        perPage,
+        page: currentPage,
+        ...(productCategory && { productCategory }),
+      }
+    });
+    return response.data.data;
+  };
+
+  const {
+    data: totalProducts,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey,
+    queryFn: fetchProducts,
+    keepPreviousData: true, // optional: keeps previous data while loading new
+    staleTime: 1000 * 60 * 5 // optional: cache for 5 mins
+  });
+
+  const navigateToProduct = (id) => navigate(`/product/${id}`);
+
+  const startProduct = (currentPage - 1) * perPage + 1;
+  const endProduct = Math.min(currentPage * perPage, totalProducts?.total || 0);
+
+  return (
+    <div>
+      {cartProducts.productAddedToCartAnimation && (
+        <div style={{width: "100%", height: "50px", backgroundColor: "green", display: "flex", justifyContent: "center", alignItems: "center", color: "white", position: "fixed", top: "0", zIndex: "1"}}>
+          {cartProducts.addToCartAnimationMessage}
+        </div>
+      )}
+
+      <section>
+        {showPaginationButtons && (
+          <div style={{display: "flex", justifyContent: "space-between"}}>
+            <p>Showing {startProduct} - {endProduct} products</p>
+          </div>
+        )}
+
+        <div className="container my-4 product-page-container">
+          {isLoading && <HomePageLoader />}
+          <div className="row">
+            {isError && <p className="text-danger">Error loading products: {error.message}</p>}
+
+            {totalProducts?.data?.map((product, index) => {
+              // console.log(product)
+              const sizes = Object.keys(product).filter(key => key.startsWith("productPrice"));
+              const firstAvailablePrice = sizes.map(size => product[size]).find(price => price > 0) || 0;
+
+              const converted = convertCurrency(
+                firstAvailablePrice,
+                import.meta.env.VITE_CURRENCY_CODE,
+                selectedCurrency
+              );
+              const convertedPrice = Number(converted ?? firstAvailablePrice);
+              const currencySymbol = currencySymbols[selectedCurrency];
+
+              const productImagesArray = [product.productImage, product.subImage1, product.subImage2, product.subImage3]
+              return (
+                <div
+                  key={index}
+                  className="col-lg-3 col-md-6 col-sm-6 col-6 single-item-container"
+                  onClick={() => navigateToProduct(product.id)}
+                >
+                  <div className="my-2">
+                    <div className="product-image-cover">
+                      <img
+                        src={product.productImage}
+                        className="card-img-top rounded-2 fade-in-image"
+                        style={{ aspectRatio: "3 / 4", width: "100%", height: "auto", opacity: 0, filter: "grayscale(100%)"}}
+                        alt={product.productName}
+                        loading="lazy"
+                        onLoad={(e) => { e.target.style.opacity = 1; e.target.style.filter = "grayscale(0%)"; }}
+                      />
+                      {/* Carousel logic */}
+  {productImagesArray.length > 1 && (
+    <div className="product-image-carousel-cover">
+      {productImagesArray.slice(1, 4).map((img, idx) => (
+        <img
+          key={idx}
+          src={img}
+          alt={`Thumb ${idx}`}
+          className="carousel-thumb fade-carousel"
+          style={{ animationDelay: `${idx * 6}s` }}
+        />
+      ))}
+    </div>
+  )}
+
+                      
+                    </div>
+
+                    <div className="pl-2 pt-2">
+                      {ratesFetched ? (
+                        <p className="fw-semibold fs-5 text-black">
+                          {currencySymbol} {convertedPrice.toLocaleString()}
+                        </p>
+                      ) : (
+                        <span className="placeholder" style={{width: "50px"}}></span>
+                      )}
+                      <p className="mb-0">{product.productName}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {
+              showPaginationButtons &&
+              totalProducts?.total > totalProducts?.per_page &&
+              <PaginationButtons
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+                perPage={perPage}
+                metaData={totalProducts}
+              />
             }
-            // const { data } = response.data;
-            // setTotalProducts(data.total); // Total number of products
-        } catch (error) {
-            // console.error('Error fetching products:', error);
-            setAllProducts((prev) => ({
-                ...prev,
-                products_loading: false
-            }))
-        }finally{
-            // Clear the loader timeout and stop the loader when the request completes
-            setAllProducts(prev => ({
-                ...prev,
-                products_loading: false // Ensure loader is hidden after request is done
-            }));
-        }
-    };
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+export default Products
 
-    // Handler for next page
-    const handleNextPage = () => {
-        if (currentPage < Math.ceil(totalProducts.total / perPage)) {
-            window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll to top
-            setCurrentPage((prevPage) => {
-                const newPage = prevPage + 1;
-                // console.log(newPage); // This will now log the correct new page
-                return newPage;
-            });
-        }
-    };
 
-    // Handler for previous page
-    const handlePreviousPage = () => {
 
-        if (currentPage > 1) {
-            window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll to top
-            setCurrentPage((prevPage) => {
-                const newPage = prevPage - 1;
-                return newPage;
-            });
-        }
-    };
 
-    const handlePaginate = (index) => {
-        window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll to top
-        setCurrentPage((prevPage) => {
-            return index;
-        });
-    }
 
-    useEffect(()=> {
-        fetchProducts()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import { useState, useEffect, useContext } from "react"
+// import productsStore from "./products.json"
+// import "./products.css"
+// import { CartContext } from "../../pages/cart/CartContext"
+// import { CurrencyContext } from "../all_context/CurrencyContext"
+// import { useNavigate } from "react-router-dom"
+// import { Link } from "react-router-dom"
+// import axios from "axios"
+// import HomePageLoader from "../homePageLoader/HomePageLoader"
+// import jsonProducts from "./products.json"
+// import PaginationButtons from "../paginationButtons/PaginationButtons"
+
+
+
+
+// const Products = ({ productCategory, showPaginationButtons }) => {
+//     const navigate = useNavigate()
+//     const { selectedCurrency, convertCurrency, currencySymbols, ratesFetched } = useContext(CurrencyContext);
+//     const { cartProducts, addToCart} = useContext(CartContext);
+//     const [allProducts, setAllProducts] =  useState({
+//         products: [],
+//         products_loading: true
+//     })
+//     const [totalProducts, setTotalProducts] = useState([]);
+//     const [currentPage, setCurrentPage] = useState(1);
+//     const [perPage, setPerPage] = useState(12);
+
+
+//     const fetchProducts = async (page) => {
+//         // console.log(currentPage, perPage)
+//         console.log(productCategory)
+//         try {
+//             const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/get-all-products`, {
+//                 params: {
+//                     perPage: perPage,
+//                     page: currentPage,
+//                     ...(productCategory && { productCategory: productCategory })  // Conditionally adding the category if it exists
+//                 }
+//             });
+//             console.log(response)
+//             if (response.data.code == "success"){
+//                 setCurrentPage(response.data.data.current_page)
+//                 setAllProducts((prev) => ({
+//                     ...prev,
+//                     products_loading: false,
+//                     products: response.data.data.data
+//                 }))
+//                 console.log(totalProducts)
+//                 setTotalProducts(response.data.data); // Set products from paginated result
+//                 console.log(totalProducts)
+//             }
+//             // const { data } = response.data;
+//             // setTotalProducts(data.total); // Total number of products
+//         } catch (error) {
+//             // console.error('Error fetching products:', error);
+//             setAllProducts((prev) => ({
+//                 ...prev,
+//                 products_loading: false
+//             }))
+//         }finally{
+//             // Clear the loader timeout and stop the loader when the request completes
+//             setAllProducts(prev => ({
+//                 ...prev,
+//                 products_loading: false // Ensure loader is hidden after request is done
+//             }));
+//         }
+//     };
+
+//     useEffect(()=> {
+//         fetchProducts()
         
-    }, [currentPage, perPage, productCategory])
+//     }, [currentPage, perPage, productCategory])
 
-    const navigateToProduct = (id) => {
-        navigate(`/product/${id}`)
-    }
+//     const navigateToProduct = (id) => {
+//         navigate(`/product/${id}`)
+//     }
+
+//     const startProduct = (currentPage - 1) * perPage + 1;
+//     const endProduct = Math.min(currentPage * perPage, totalProducts.total || 0);
 
 
-    return <div>
-        {cartProducts.productAddedToCartAnimation ? 
-            <div style={{width: "100%", height: "50px", backgroundColor: "green", display: "flex", justifyContent: "center", alignItems: "center", color: "white", position: "fixed", top: "0", zIndex: "1"}}>{cartProducts.addToCartAnimationMessage}</div>
-            : null
-        }
-{/* <div>
-  <video loop  autoplay muted playsInline name="media" style={{width: "100%", height: "auto"}}>
-    <source src="https://images.hergivenhair.com/hghemail/2023/images/adv.mp4" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
-</div> */}
+//     return <div>
+//         {cartProducts.productAddedToCartAnimation ? 
+//             <div style={{width: "100%", height: "50px", backgroundColor: "green", display: "flex", justifyContent: "center", alignItems: "center", color: "white", position: "fixed", top: "0", zIndex: "1"}}>{cartProducts.addToCartAnimationMessage}</div>
+//             : null
+//         }
+// {/* <div>
+//   <video loop  autoplay muted playsInline name="media" style={{width: "100%", height: "auto"}}>
+//     <source src="https://images.hergivenhair.com/hghemail/2023/images/adv.mp4" type="video/mp4" />
+//     Your browser does not support the video tag.
+//   </video>
+// </div> */}
  
 
 
 
-        <section>
-                    {showPaginationButtons && <div style={{display: "flex", justifyContent: "space-between"}}>
-                        {/* <p><Link to='/' style={{fontWeight: "bold", color: "black", textDecoration: "none"}}>Home</Link> &gt; <Link to='/collections/all?category=All products' style={{fontWeight: "bold", color: "black", textDecoration: "none"}}>all products</Link></p> */}
-                        <p>View all | {allProducts.products.length} products</p>
-
-                    </div>}
-            <div className="container my-5 product-page-container">
+//         <section>
+//                     {showPaginationButtons && <div style={{display: "flex", justifyContent: "space-between"}}>
+//                         {/* <p><Link to='/' style={{fontWeight: "bold", color: "black", textDecoration: "none"}}>Home</Link> &gt; <Link to='/collections/all?category=All products' style={{fontWeight: "bold", color: "black", textDecoration: "none"}}>all products</Link></p> */}
+//                         {/* <p>View all | {allProducts.products.length} products</p> */}
+//                         {/* <p>Showing {startProduct} - {endProduct} of {totalProducts.total || 0} products</p> */}
+//                         <p>Showing {startProduct} - {endProduct} products</p>
+//                     </div>}
+//             <div className="container my-4 product-page-container">
                
-                {allProducts.products_loading && <HomePageLoader />}
-                <div className="row">
-                    {console.log(allProducts)}
-                    {allProducts.products?.map((product, index) =>{
-                        // console.log(product)
-                        const sizes = [];
-                        // Iterate through all keys of the 'product' object
-                        Object.keys(product).forEach(key => {
-                            // Check if the key starts with 'productPriceIn'
-                            if (key.startsWith("productPrice")) {
-                                sizes.push(key);
-                            }
-                        });
-                        
-                        const firstAvailablePrice = sizes.map(size => product[size]).find(price => price > 0) || 0;
-                        console.log(firstAvailablePrice)
-                        const convertedPrice = Number(convertCurrency(firstAvailablePrice, import.meta.VITE_CURRENCY_CODE, selectedCurrency)).toLocaleString();
-                        const currencySymbol = currencySymbols[selectedCurrency];
-                        // console.log(firstAvailablePrice)
-                        return (<div key={index} className="col-lg-3 col-md-6 col-sm-6 col-6 single-item-container"  onClick={()=>navigateToProduct(product.id)}>
-                        <div className="my-2">
-                   
-                            <img src={product.productImage} className="card-img-top rounded-2" style={{aspectRatio: "3 / 4", width: "100%", height: "auto"}} />
+//                 {allProducts.products_loading && <HomePageLoader />}
+//                 <div className="row">
+//                     {console.log(allProducts)}
+//                     {allProducts.products?.map((product, index) =>{
+//                         // console.log(product)
+//                         const sizes = [];
+//                         // Iterate through all keys of the 'product' object
+//                         Object.keys(product).forEach(key => {
+//                             // Check if the key starts with 'productPriceIn'
+//                             if (key.startsWith("productPrice")) {
+//                                 sizes.push(key);
+//                             }
+//                         });
+//                     const firstAvailablePrice = sizes.map(size => product[size]).find(price => price > 0) || 0;
+
+// const converted = convertCurrency(
+//   firstAvailablePrice,
+//   import.meta.VITE_CURRENCY_CODE,
+//   selectedCurrency
+// );
+// console.log({ converted, selectedCurrency, from: import.meta.env.VITE_CURRENCY_CODE });
+
+// // Fallback to original price if conversion is not ready
+// const convertedPrice = Number(converted ?? firstAvailablePrice);
+// const currencySymbol = currencySymbols[selectedCurrency];
+
+// return (
+//   <div
+//     key={index}
+//     className="col-lg-3 col-md-6 col-sm-6 col-6 single-item-container"
+//     onClick={() => navigateToProduct(product.id)}
+//   >
+//     <div className="my-2">
+//     <div className="product-image-cover">
+//         <img
+//             src={product.productImage}
+//             className="card-img-top rounded-2 fade-in-image"
+//             style={{ aspectRatio: "3 / 4", width: "100%", height: "auto", opacity: 0, filter: "grayscale(100%)"}}
             
-                        <div className="pl-2 pt-2">
-                            {/* <h5 style={{display: "flex", gap: "5px"}}>
-                                <span><b>{currencySymbol}</b></span>
-                                <span><b>{convertedPrice.toLocaleString()}</b></span>
-                            </h5> */}
-                        
-                            <p class="fw-semibold fs-5 text-black">{currencySymbol} {convertedPrice.toLocaleString()}</p>
-                            <p className=" mb-0">{product.productName}</p>
-                            {/* <p className="text-muted">{product.description}</p> */}
-                        </div>
-                        </div>
-                    </div>)
-                    })}
-                    
-                    {/* <div style={{display: "flex", justifyContent: "center", margin: "50px 0"}}>
-                        
-                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                            <button className='btn btn-dark' onClick={handlePreviousPage} disabled={currentPage < 2}>&laquo;</button>
-                            &nbsp;&nbsp;<span>Page {currentPage} of {Math.ceil(totalProducts.total / perPage)}</span>&nbsp;&nbsp;
-                            <button className='btn btn-dark'  onClick={handleNextPage} disabled={currentPage == Math.ceil(totalProducts.total / perPage)}>&raquo;</button>
-                        </div>
-                    </div> */}
-                    {
-                        showPaginationButtons && allProducts.products.length > 0 && allProducts.products.length > perPage &&  <div style={{display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column"}}>
-                            <p><span>Page {currentPage} of {Math.ceil(totalProducts.total / perPage)}</span></p>
-                            <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                <button className='btn btn-dark' onClick={handlePreviousPage} disabled={currentPage < 2}>&laquo;</button>
-                                {
-                                    (()=>{
-                                        
-                                        return Array.from({ length: Math.ceil(totalProducts.total / perPage) }, (_, index) => (
-                                            <button className={`btn btn-light ${currentPage == index + 1 && 'btn-dark'}`}  key={index} onClick={()=> handlePaginate(index + 1)}>{index + 1}</button>
-                                        ));
-                                    })()
-                                }
-                                <button className='btn btn-dark'  onClick={handleNextPage} disabled={currentPage == Math.ceil(totalProducts.total / perPage)}>&raquo;</button>
+//             alt={product.productName}
+//             onLoad={(e) => { e.target.style.opacity = 1; e.target.style.filter = "grayscale(0%)"; }}
+//         />
+
+//         {product.subImage1 && (product.subImage2 || product.subImage3) && (
+//             <div
+//             id={`productCarousel-${product.id}`}
+//             className="product-image-carousel-cover carousel slide carousel-fade product-image-carousel-cover"
+//             data-bs-ride="carousel"
+//             data-bs-interval="4000"
+        
+//             >
+//                 {[product.subImage1, product.subImage2, product.subImage3].filter(Boolean).length > 0 && (
+//                     <div className="carousel-inner h-100 w-100">
+//                         {[product.subImage1, product.subImage2, product.subImage3]
+//                         .filter(Boolean)
+//                         .map((img, index) => (
+//                             <div
+//                             className={`carousel-item ${index === 0 ? "active" : ""}`}
+//                             key={index}
+//                             style={{ height: "100%", width: "100%" }} // ensure .carousel-item fills space
+//                             >
+//                             <img
+//                                 src={img}
+//                                 className="d-block fade-in-image"
+//                                 style={{
+//                                 width: "100%",
+//                                 height: "100%",
+//                                 objectFit: "cover",
+//                                 borderRadius: "50%",
+//                                 opacity: 0,
+                            
+//                                 }}
+//                                 alt={`sub-img-${index}`}
+//                                 onLoad={(e) => { e.target.style.opacity = 1;}}
+//                             />
+//                             </div>
+//                         ))}
+//                     </div>
+//                 )}
+//             </div>
+//         )}
+
+//     </div>
 
 
-                            </div>
-                        </div>
-                    }
 
-                </div>
-            </div>
-        </section> 
+//       <div className="pl-2 pt-2">
+//         {ratesFetched ? (
+//           <p className="fw-semibold fs-5 text-black">
+//             {currencySymbol} {convertedPrice.toLocaleString()}
+//           </p>
+//         ) : (
+//           <span className="placeholder" style={{width: "50px"}}></span>
+//         )}
+
+//         <p className="mb-0">{product.productName}</p>
+//       </div>
+//     </div>
+//   </div>
+// );
+//                     })}
+//                     {
+//                         showPaginationButtons && totalProducts.total > totalProducts.per_page &&  <PaginationButtons currentPage={currentPage} setCurrentPage={setCurrentPage} perPage={perPage} metaData={totalProducts} />
+//                     }
+
+//                 </div>
+//             </div>
+//         </section> 
         
 
 
 
-    </div>
-}
-export default Products
+//     </div>
+// }
+// export default Products
 
 
 

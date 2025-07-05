@@ -12,6 +12,7 @@ const VerifyEmailCode = () => {
   const [seconds, setSeconds] = useState(60);
   const [resendAvailable, setResendAvailable] = useState(false);
   const [serverErrorFeedback, setServerErrorFeedback] = useState("")
+  const [emailVerified, setEmailVerified] = useState(false)
   const [serverSuccessFeedback, setServerSuccessFeedback] = useState({
     success: false,
     registerToken: ""
@@ -55,7 +56,10 @@ const VerifyEmailCode = () => {
       }else{
         return null
       }
-    })
+    }).catch((err) => {
+        console.log("Token validation error:", err);
+        navigate('/page-not-found', { replace: true });
+      })
   }, [])
   const handleChange = (e, index) => {
     const code = inputsRef.current.map(input => input.value).join("");
@@ -114,6 +118,7 @@ const VerifyEmailCode = () => {
           success: true,
           registerToken: feedback.data.createAccountToken
         }))
+        setEmailVerified(true)
       }else if(feedback.data.code == "error"){
         setIsLoading(false)
         setServerErrorFeedback(feedback.data.message)
@@ -143,10 +148,19 @@ const VerifyEmailCode = () => {
             <Logo />
             <h5>Verify your email address</h5>
             <span>We have sent a verification code to {email}</span>
+            {emailVerified ? <div  style={{ padding: "10px" }}>
+                    <div class="success-icon">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M7 13l3 3 7-7" />
+                    </svg>
+                  </div>
+              {serverSuccessFeedback.success && <div className="mb-3">Email verification successful!. you can now <span  onClick={()=> navigate(`/register/${serverSuccessFeedback.registerToken}`, { state: { defaultEmail: email } })} style={{color: "purple", fontWeight: "500", cursor: "pointer"}}>register</span></div>}
+            </div>
+            :
             <form id="verificationForm" onSubmit={handleSubmit}>
               <div style={{ padding: "10px" }}>
                 {serverErrorFeedback && <div className="alert alert-danger">{serverErrorFeedback}</div>}
-                {serverSuccessFeedback.success && <div className="mb-3">Email verification successful. you can now <span  onClick={()=> navigate(`/register/${serverSuccessFeedback.registerToken}`, { state: { defaultEmail: email } })} style={{color: "purple", fontWeight: "500", cursor: "pointer"}}>register</span></div>}
 
                   
                 <div className="code-input-wrapper">
@@ -182,7 +196,8 @@ const VerifyEmailCode = () => {
                 </button>
               </div>
             </form>
-            {resendAvailable ? (
+}
+            {!emailVerified && (resendAvailable ? (
               <div className="mt-5">
                 <a href="#" onClick={handleResendClick} style={{color: "purple", textDecoration: "none"}}>
                   <b>Resend verification code</b>
@@ -199,7 +214,7 @@ const VerifyEmailCode = () => {
                   <span style={{ color: "purple" }}>{seconds} seconds</span>
                 </small>
               </div>
-            )}
+            ))}
           </div>
         </div>
       </div>

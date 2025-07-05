@@ -189,9 +189,10 @@ const EditProductForm = ({ product, onClose}) => {
                     
                    
                 } else {
+                    toast.error(feedback.data.message)
                     setServerErrorMessage({
                         status: true,
-                        message: feedback.data.message,
+                        message: `An error occurred while updating product: ${feedback.data.message}`,
                     });
                 }
             }
@@ -214,7 +215,7 @@ const EditProductForm = ({ product, onClose}) => {
                 </div>
                 <div className="admin-editPage-form" style={{ padding: "0px 20px 35px 20px" }}>
                     {serverErrorMessage.status && (
-                        <div className="alert alert-danger">{serverErrorMessage.message}</div>
+                        <div className="alert alert-danger mt-1">{serverErrorMessage.message}</div>
                     )}
                     {serverSuccessState && <div className="arrow-box">Product successfully updated!</div>}
 

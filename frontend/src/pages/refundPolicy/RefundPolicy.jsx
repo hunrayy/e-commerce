@@ -24,7 +24,7 @@ const RefundPolicy = () => {
             params: { page: "refundPolicy" },
         }).then((feedback) => {
             // setIsLoading(false);
-            console.group(feedback)
+            console.log(feedback)
             if (feedback.data.code === "success") {
                 setIsLoading(false)
                 setPolicyTitle(feedback.data.data.title);

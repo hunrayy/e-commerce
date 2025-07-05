@@ -5,31 +5,31 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
 import localforage from 'localforage';
+import { useUserManagement } from '../viewUsers/useUserManagement';
 
 const AdminSettingsPage = () => {
+  const { 
+    allUsers,
+    singleUser,
+    setSingleUser
+  } = useUserManagement('admins');
   // const use_auth = useAuth();
   const { user, setUser } = useAuth();
   console.log(user)
-
+  
   const adminDetails = user.user || {};
+  
+
 
   // State to store form data, including OTP
   const [formData, setFormData] = useState({
-    firstname: adminDetails.firstname || '',
-    lastname: adminDetails.lastname || '',
-    email: adminDetails.email || '',
-    previousEmail: adminDetails.email || '',
     countryOfWarehouseLocation: adminDetails.countryOfWarehouseLocation || '',
     internationalShippingFee: adminDetails.internationalShippingFee || '',
     domesticShippingFee: adminDetails.domesticShippingFee || '',
     numberOfDaysForDomesticDelivery: adminDetails.numberOfDaysForDomesticDelivery || '',
     numberOfDaysForInternationalDelivery: adminDetails.numberOfDaysForInternationalDelivery || '',
-    otp: '' // Add OTP to form data
   });
-  // State to track if OTP has been sent
-  const [OtpSent, setOtpSent] = useState(false);
-  const [otpLoading, setOtpLoading] = useState(false)
-
+ 
   // State to handle form validation errors
   const [errors, setErrors] = useState({});
 
@@ -42,38 +42,12 @@ const AdminSettingsPage = () => {
   // Function to validate form inputs
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.firstname.trim()) newErrors.firstname = "First name is required";
-    if (!formData.lastname.trim()) newErrors.lastname = "Last name is required";
     if (!formData.countryOfWarehouseLocation.trim()) newErrors.countryOfWarehouseLocation = "Country is required";
     if (!formData.domesticShippingFee) newErrors.domesticShippingFee = "Domestic shipping fee is required";
     if (!formData.internationalShippingFee) newErrors.internationalShippingFee = "International shipping fee is required";
     if (!formData.numberOfDaysForDomesticDelivery) newErrors.numberOfDaysForDomesticDelivery = "Number of days for domestic delivery is required";
     if (!formData.numberOfDaysForInternationalDelivery) newErrors.numberOfDaysForInternationalDelivery = "Number of days for international delivery is required";
-    if (!formData.otp) newErrors.otp = "OTP is required";
-    if (!OtpSent) newErrors.otp = "OTP must be sent to verify email";
     return newErrors;
-  };
-
-  // Function to send OTP
-  const sendOTP = async (e) => {
-    e.preventDefault();
-    setOtpLoading(true)
-    const feedback = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/send-email-verification-code`, { email: formData.email })
-    console.log(feedback)
-    if (feedback.data.code == "success") {
-      setOtpLoading(false)
-      const verificationCode = feedback.data.verificationCode;
-      Cookies.set("_emt", verificationCode, { expires: 5 / 1440 });
-      toast.success("OTP sent successfully")
-      setOtpSent(true);
-    } else if (feedback.data.code == "error") {
-      setOtpLoading(false)
-      toast.error(`${feedback.data.message}`)
-    } else {
-      setOtpLoading(false)
-      toast.error("An error occured while sending OTP")
-
-    }
   };
 
   // Function to handle form submission
@@ -88,44 +62,31 @@ const AdminSettingsPage = () => {
       setErrors({}); // Clear errors if validation passes
 
       // Proceed with form submission
-      const codeFromCookies = Cookies.get("_emt")
       const authToken = Cookies.get("authToken")
-      console.log('Form data:', formData, "code from cookies: ", codeFromCookies);
-      const feedback = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/admin-settings`, { formData }, {
+      console.log('Form data:', formData);
+      const feedback = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/admin/shipping-settings`, { formData }, {
         headers: {
           Authorization: `Bearer ${authToken}`,
-          codeFromCookies: codeFromCookies
         }
       })
       console.log(feedback)
-      if (feedback.data.code == 'invalid-jwt') {
+      if (feedback.data.code == 'invalid-jwt' || feedback.data.code == 'error') {
         toast.error(`${feedback.data.message}`)
       } else if (feedback.data.code == "success") {
         //update in database was successful, next, update data in localforage
-        await localforage.setItem('current_user', JSON.stringify(feedback.data.data))
+        // await localforage.setItem('shipping', JSON.stringify(feedback.data.data))
         setFormData({
-          firstname: '',
-          lastname: '',
-          email: '',
-          previousEmail: '',
           countryOfWarehouseLocation: '',
           internationalShippingFee: '',
           domesticShippingFee: '',
           numberOfDaysForDomesticDelivery: '',
           numberOfDaysForInternationalDelivery: '',
-          otp: ''
         })
-        // window.location.reload()
-        setUser({
-          is_user_logged: true,
-          user: feedback.data.data
-        })
-        toast.success('Admin record updated successfully')
+        toast.success('Shipping details updated successfully')
       } else {
-        toast.error("An error occured while updating admin record")
+        toast.error("An error occured while updating shipping details")
       }
 
-      // You can submit the formData (which now includes OTP) to your backend here using axios or other methods
     }
   };
 
@@ -133,104 +94,88 @@ const AdminSettingsPage = () => {
   const [countries, setCountries] = useState([]);
 
 // Fetch list of countries from API on component mount
-  useEffect(()=> {
-    console.log(adminDetails)
-    axios.get("https://restcountries.com/v3.1/all")
-      .then(response => {
-        const countryData = response.data.map(country => ({
-          name: country.name.common,
-          code: country.cca2
-        }));
-        setCountries(countryData);
+  // useEffect(()=> {
+  //   console.log(adminDetails)
+  //   axios.get("https://restcountries.com/v3.1/all")
+  //     .then(response => {
+  //       const countryData = response.data.map(country => ({
+  //         name: country.name.common,
+  //         code: country.cca2
+  //       }));
+  //       setCountries(countryData);
+  //     })
+  //     .catch(error => {
+  //       console.error("Error fetching countries:", error);
+  //       toast.error("Failed to fetch countries. Please try again later.");
+  //     });
+  // }, [])
+
+    useEffect(()=> {
+      console.log(adminDetails)
+      axios.get(`${import.meta.env.VITE_BACKEND_URL}/get-all-countries-and-states`)
+        .then(response => {
+          console.log(response)
+          const countryData = response.data.data.data.map(country => ({
+            name: country.name,
+            code: country.iso3
+          }));
+          setCountries(countryData);
+        })
+        .catch(error => {
+          console.error("Error fetching countries:", error);
+          toast.error("Failed to fetch countries. Please try again later.");
+        });
+    }, [])
+    
+    const token = Cookies.get("authToken");
+    useEffect(()=> {
+      console.log(allUsers)
+      axios.get(`${import.meta.env.VITE_BACKEND_URL}/get-number-of-days-of-delivery`,{
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }).then((feedback) => {
+        console.log(feedback)
+        if(feedback.data.code == "success"){
+          setFormData((prev)=> ({
+            ...prev,
+            countryOfWarehouseLocation: feedback.data.data.countryOfWarehouseLocation,
+            internationalShippingFee: feedback.data.data.internationalShippingFee,
+            domesticShippingFee: feedback.data.data.domesticShippingFee,
+            numberOfDaysForDomesticDelivery: feedback.data.data.numberOfDaysForDomesticDelivery,
+            numberOfDaysForInternationalDelivery: feedback.data.data.numberOfDaysForInternationalDelivery,
+
+          }))
+        }
       })
-      .catch(error => {
-        console.error("Error fetching countries:", error);
-        toast.error("Failed to fetch countries. Please try again later.");
-      });
-  }, [])
+    }, [])
+
+
+useEffect(() => {
+  if (allUsers.length > 0 && adminDetails?.email) {
+    const matchingAdmin = allUsers.find(user => user.email === adminDetails.email);
+    if (matchingAdmin) {
+      setSingleUser(matchingAdmin);
+    }
+    console.log(matchingAdmin)
+  }
+}, [allUsers, adminDetails?.email]);
+
+
+const canEditShipping = singleUser?.admin?.role_names?.includes('can-edit-shipping-settings') || adminDetails.is_super_admin == 1;
 
   return (
     <div>
       <div className="bread-crumb">
-        <div>Before proceeding, an OTP will be sent to the email you input below</div>
-      </div>
+                <div style={{fontSize: "20px", fontWeight: "semi bold"}}>Admin Dashboard </div>
+                <div>Home / Shipping settings</div>
+            </div>
 
       <div className="admin-settings-container">
-        <h1 className='text-center mb-4'>Admin Settings</h1>
+        <h1 className='text-center mb-4'>Shipping Settings</h1>
 
         <form className="settings-form row" onSubmit={handleSubmit}>
-          <div className="mb-3 col-6">
-            <label>First name</label>
-            <input
-              type="text"
-              name="firstname"
-              value={formData.firstname}
-              className={`form-control form-control-lg ${errors.firstname ? 'is-invalid' : ''}`}
-              placeholder="First name"
-              onChange={handleInputChange}
-              style={{fontSize: "17px"}}
-              required
-            />
-            {errors.firstname && <div className="invalid-feedback">{errors.firstname}</div>}
-          </div>
-
-          <div className="mb-3 col-6">
-            <label>Last name</label>
-            <input
-              type="text"
-              name="lastname"
-              value={formData.lastname}
-              className={`form-control form-control-lg  ${errors.lastname ? 'is-invalid' : ''}`}
-              placeholder="Last name"
-              onChange={handleInputChange}
-              style={{fontSize: "17px"}}
-              required
-            />
-            {errors.lastname && <div className="invalid-feedback">{errors.lastname}</div>}
-          </div>
-
           <div className="form-group mb-4 col-12 col-md-6">
-            <label>Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              className={`form-control form-control-lg ${errors.email ? 'is-invalid' : ''}`}
-              placeholder="Email"
-              onChange={handleInputChange}
-              style={{fontSize: "17px"}}
-              required
-            />
-            {errors.email && <div className="invalid-feedback">{errors.email}</div>}
-            <div style={{ display: "flex", justifyContent: "right" }}>
-              {otpLoading ? "sending..." : (
-                OtpSent ? (
-                  <span className="badge bg-success">OTP sent</span>
-                ) : (
-                  <button className="btn btn-sm" style={{ background: "purple", color: "white" }} onClick={sendOTP}>
-                    Click to send OTP
-                  </button>
-                )
-              )}
-
-            </div>
-            {errors.otp && <div className="text-danger">{errors.otp}</div>}
-          </div>
-
-          {/* <div className="form-group form-floating mb-4">
-            <input
-              type="text"
-              name="countryOfWarehouseLocation"
-              value={formData.countryOfWarehouseLocation}
-              placeholder="Country of Warehouse Location"
-              className={`form-control ${errors.countryOfWarehouseLocation ? 'is-invalid' : ''}`}
-              onChange={handleInputChange}
-              required
-            />
-            <label>Country of Warehouse location</label>
-            {errors.countryOfWarehouseLocation && <div className="invalid-feedback">{errors.countryOfWarehouseLocation}</div>}
-          </div> */}
-                    <div className="form-group mb-4 col-12 col-md-6">
             <label>Country of Warehouse location</label>
             <select
               name="countryOfWarehouseLocation"
@@ -238,6 +183,7 @@ const AdminSettingsPage = () => {
               onChange={handleInputChange}
               className={`form-control ${errors.countryOfWarehouseLocation ? 'is-invalid' : ''}`}
               required
+              disabled={!canEditShipping}
             >
               <option value="">Select Country</option>
               {countries.map(country => (
@@ -259,6 +205,7 @@ const AdminSettingsPage = () => {
               style={{fontSize: "17px"}}
               onChange={handleInputChange}
               required
+              disabled={!canEditShipping}
             />
             {errors.domesticShippingFee && <div className="invalid-feedback">{errors.domesticShippingFee}</div>}
           </div>
@@ -273,6 +220,7 @@ const AdminSettingsPage = () => {
               style={{fontSize: "17px"}}
               onChange={handleInputChange}
               required
+              disabled={!canEditShipping}
             />
             {errors.internationalShippingFee && <div className="invalid-feedback">{errors.internationalShippingFee}</div>}
           </div>
@@ -287,6 +235,7 @@ const AdminSettingsPage = () => {
               style={{fontSize: "17px"}}
               onChange={handleInputChange}
               min="1"
+              disabled={!canEditShipping}
             />
             <small id="deliveryHelp" className="form-text text-muted">
               Number of days for domestic delivery.
@@ -303,31 +252,30 @@ const AdminSettingsPage = () => {
               style={{fontSize: "17px"}}
               onChange={handleInputChange}
               min="1"
+              disabled={!canEditShipping}
             />
             <small id="deliveryHelp" className="form-text text-muted">
               Number of days for international delivery.
             </small>
           </div>
 
-
-          <div className="form-group mb-4">
-            <label>Enter OTP received</label>
-            <input
-              type="number"
-              name="otp"
-              value={formData.otp}
-              className={`form-control form-control-lg ${errors.otp ? 'is-invalid' : ''}`}
-              placeholder="Enter OTP"
-              style={{fontSize: "17px"}}
-              onChange={handleInputChange}
-              required
-            />
-            {errors.otp && <div className="invalid-feedback">{errors.otp}</div>}
-          </div>
-
-          <div className="d-grid">
+          {/* <div className="d-grid mt-4">
             <button type="submit" className="btn btn-lg" style={{ backgroundColor: "purple", color: "white" }}>Save Changes</button>
-          </div>
+          </div> */}
+
+          {canEditShipping && (
+            <div className="d-grid mt-4">
+              <button
+                type="submit"
+                className="btn btn-lg"
+                style={{ backgroundColor: "purple", color: "white" }}
+              >
+                Save Changes
+              </button>
+            </div>
+          )}
+
+          
 
         </form>
       </div>

@@ -14,7 +14,8 @@
     animation-name: arrow-box;
     animation-duration: 5s;
     position: fixed;
-    top: 40vh;
+    /* top: 40vh; */
+    top: 100px;
     left: -400px;
     z-index: 2;
   }

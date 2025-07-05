@@ -8,6 +8,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Link } from 'react-router-dom';
 import { CurrencyContext } from '../../components/all_context/CurrencyContext';
+import PaginationButtons from '../../components/paginationButtons/PaginationButtons';
 
 const UserAccount = () => {
   const { selectedCurrency, convertCurrency, currencySymbols } = useContext(CurrencyContext);
@@ -23,9 +24,20 @@ const UserAccount = () => {
   const user = use_auth.user.user
   const [noOrderYet, setNoOrderYet] = useState(false)
   const [orderList, setOrderList] = useState([])
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [totalOrders, setTotalOrders] = useState([]);
+  const showPaginationButtons = true
+  
+  
+  
   const getUserDetails = async() => {
     const token = Cookies.get("authToken")
     const feedback = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/get-user-orders`, {
+      params: {
+        perPage: perPage,
+        page: currentPage,
+      },
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -37,7 +49,9 @@ const UserAccount = () => {
         setLoading(false)
       }else{
         setLoading(false)
-        setOrderList(feedback.data.data)
+        setOrderList(feedback.data.data.data)
+        setCurrentPage(feedback.data.data.current_page)
+        setTotalOrders(feedback.data.data);
       }
     }
   }
@@ -46,7 +60,7 @@ const UserAccount = () => {
   useEffect(()=> {
     !use_auth?.user?.is_user_logged && !use_auth.loading && navigate("/", {replace: true})
     getUserDetails()
-  }, [use_auth.loading])
+  }, [use_auth.loading, currentPage, perPage])
 
   if(use_auth.loading){
     return null
@@ -128,7 +142,7 @@ const UserAccount = () => {
                                 </div>
                               :
                               (
-                                orderList.map((each_item) => {
+                                orderList && orderList.length > 0 && orderList.map((each_item) => {
                                   return <div className="mb-4">
                                     <div className="card p-3">
                                       <div className="row">
@@ -207,7 +221,7 @@ const UserAccount = () => {
                               <h3 style={{margin: "0", color: "#333", fontSize: "18px"}}>{product.productName}</h3>
                               <p style={{margin: "5px 0", color: "#777", fontSize: "14px"}}>Length: {product.lengthPicked}</p>
                               <p style={{margin: "5px 0", color: "#777", fontSize: "14px"}}>Quantity: {product.quantity}</p>
-                              <p style={{margin: "5px 0", color: "#777", fontSize: "14px"}}>Price: {each_item.currency} {convertCurrency(product.productPriceInNaira, 'NGN', each_item.currency).toLocaleString()}</p>
+                              <p style={{margin: "5px 0", color: "#777", fontSize: "14px"}}>Price: {each_item.currency} {convertCurrency(product.productPrice, import.meta.env.VITE_CURRENCY_CODE, each_item.currency).toLocaleString()}</p>
                           </div>
                         </div>
                       </div>
@@ -262,12 +276,13 @@ const UserAccount = () => {
                                         
                                       </div>
                                     </div>
+                                    {showPaginationButtons && totalOrders.total > totalOrders.per_page &&  <PaginationButtons currentPage={currentPage} setCurrentPage={setCurrentPage} perPage={perPage} metaData={totalOrders} />}
                                   </div>
                                 })
                               )
-            
-  )
-                }
+                              
+                            )
+                          }
                 
                 
 

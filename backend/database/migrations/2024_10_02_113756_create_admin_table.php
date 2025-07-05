@@ -14,40 +14,43 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+
+     public function up()
     {
         Schema::create('admin', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->string('firstname');
-            $table->string('lastname');
-            $table->string('email')->unique();
-            $table->string('password');
-            $table->string('user');
-            $table->boolean('is_an_admin');
-            // $table->string('countryOfWarehouseLocation');
-            // $table->decimal('domesticShippingFeeInNaira', 10, 2);
-            // $table->decimal('internationalShippingFeeInNaira', 10, 2);
-            // $table->integer('numberOfDaysForDomesticDelivery');
-            // $table->integer('numberOfDaysForInternationalDelivery');
+            $table->uuid('id')->primary();  // UUID type for the primary key
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');  // Foreign key to the 'users' table
+            $table->json('role_id');  // Store an array of role IDs in JSON format
+            $table->boolean('is_super_admin')->default(false);  // A field to identify the super admin
             $table->timestamps();
         });
-
-        Admin::create([
-            'id' => (string) Str::uuid(),
-            'firstname' => 'john',
-            'lastname' => 'doe',
-            'email' => 'johndoe@gmail.com',
-            'password' => Hash::make('johndoe'),
-            'user' => 'admin',
-            'is_an_admin' => true,
-            // 'countryOfWarehouseLocation' => 'Nigeria',
-            // 'domesticShippingFeeInNaira' => 16551,
-            // 'internationalShippingFeeInNaira' => 49653,
-            // 'numberOfDaysForDomesticDelivery' => 7,
-            // 'numberOfDaysForInternationalDelivery' => 14
-        ]);
-
     }
+
+    // public function up(): void
+    // {
+    //     Schema::create('admin', function (Blueprint $table) {
+    //         $table->uuid('id')->primary();
+    //         $table->string('firstname');
+    //         $table->string('lastname');
+    //         $table->string('email')->unique();
+    //         $table->string('password');
+    //         $table->string('user');
+    //         $table->boolean('is_an_admin');
+    //         $table->timestamps();
+    //     });
+
+    //     Admin::create([
+    //         'id' => (string) Str::uuid(),
+    //         'firstname' => 'john',
+    //         'lastname' => 'doe',
+    //         'email' => 'johndoe@gmail.com',
+    //         'password' => Hash::make('johndoe'),
+    //         'user' => 'admin',
+    //         'is_an_admin' => true,
+    //     ]);
+
+    // }
 
     /**
      * Reverse the migrations.

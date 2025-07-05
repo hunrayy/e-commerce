@@ -1,11 +1,18 @@
 import {useState, useEffect} from 'react';
 import Carousel from 'react-bootstrap/Carousel';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import firstPicture from "../../assets/firstPicture.png";
-import secondPicture from "../../assets/secondPicture.png";
-import thirdPicture from "../../assets/thirdPicture.png";
+import firstPicture from "../../assets/daniellaHairImage.jpg";
+import secondPicture from "../../assets/cocojonesHairImage.jpg";
+// import thirdPicture from "../../assets/bainduHairImage.jpg";
+// import thirdPicture from "../../assets/myleeHairImage.jpg";
+import thirdPicture from "../../assets/aaishaHairImage.jpg";
+import fourthPicture from "../../assets/myleeHairImage.jpg"
+// import thirdPicture from "../../assets/pamelaHairImage.jpg";
+
+
 import hair_video from "../../assets/hair_video.mp4";
 import hair_image from "../../assets/hair_image.webp";
+import hair_image2 from "../../assets/hair_image2.png";
 import "./banner.css";
 
 const Banner = () => {
@@ -17,56 +24,62 @@ const Banner = () => {
   }, []);
   
   
-  const detailsObject = [
-    {
-      text: "Achieve silky smooth hair with our top-grade products. Easy to maintain and style for everyday glamour",
-      imgSrc: firstPicture
-    },
-    {
-      text: "Our hair extensions are designed for effortless beauty. Easy to apply, comfortable to wear, and stunning to look at",
-      imgSrc: secondPicture
-    },
-    {
-      text: "We offer top-quality hair products, excellent customer service, and unbeatable prices. Shop with confidence",
-      imgSrc: thirdPicture
-    }
-  ];
+const detailsObject = [
+  {
+    text: "Achieve silky smooth hair with our top-grade products. Easy to maintain and style for everyday glamour",
+    imgSrc: firstPicture,
+    alt: "Silky straight black human hair wig from BeautyByKiara"
+  },
+  {
+    text: "Our hair extensions are designed for effortless beauty. Easy to apply, comfortable to wear, and stunning to look at",
+    imgSrc: secondPicture,
+    alt: "Voluminous curly hair extensions from BeautyByKiara"
+  },
+  {
+    text: "We offer top-quality hair products, excellent customer service, and unbeatable prices. Shop with confidence",
+    imgSrc: thirdPicture,
+    alt: "Long body wave frontal wig from BeautyByKiara"
+  },
+  {
+    text: "We offer top-quality hair products, excellent customer service, and unbeatable prices. Shop with confidence",
+    imgSrc: fourthPicture,
+    alt: "Sleek middle-part straight lace closure wig by BeautyByKiara"
+  }
+];
+
 
   return (
     <div>
 {/* video-local w-100 h-100 of-cover center-middle p-absolute mih */}
-<div className='new-banner-container'>
-  
-
-  {/* <video className='new-banner-video' playsInline="playsinline" autoPlay="autoplay" loop="loop" preload="none" muted="muted" poster={hair_image} src={hair_video}>
-  <source data-src={hair_video} type="video/mp4" />
-  </video> */}
-   <video className='new-banner-video' playsInline="playsinline" autoPlay="autoplay" loop="loop" preload="none" muted="muted" poster={hair_image} src="https://cdn.shopify.com/videos/c/o/v/cb150da802b8435e95e4a424536675a7.mp4">
-  <source data-src="https://cdn.shopify.com/videos/c/o/v/cb150da802b8435e95e4a424536675a7.mp4" type="video/mp4" />
-  </video>
-  <Carousel
-                prevLabel={null}
-                nextLabel={null}
-                style={{zIndex: "1"}}
-                >
-                {detailsObject.map((item, index) => (
-                  <Carousel.Item key={index}>
-                    <div className="new-banner-carousel-container" >
-                      <img
-                        src={item.imgSrc}
-                        alt={`Slide ${index + 1}`}
-                        
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      />
-                      <Carousel.Caption style={{ zIndex: "0" }}>
-                        <h5 style={{ fontFamily: "cursive" }}>{item.text}</h5>
-                      </Carousel.Caption>
-                    </div>
-                  </Carousel.Item>
-                ))}
-              </Carousel>
-
+<div className="new-banner-container">
+  <div className="new-banner-carousel-container">
+    <Carousel controls={false} fade className="custom-fade-carousel" prevLabel={null} nextLabel={null} style={{ zIndex: "1" }}>
+      {detailsObject.map((item, index) => (
+        <Carousel.Item key={index}>
+          <img
+            src={item.imgSrc}
+            // alt={`Slide ${index + 1}`}
+            alt={item.alt}
+          />
+        </Carousel.Item>
+      ))}
+    </Carousel>
   </div>
+
+
+  <video
+    className='new-banner-video'
+    playsInline
+    autoPlay
+    loop
+    preload="none"
+    muted
+    poster={hair_image2}
+    src="https://cdn.shopify.com/videos/c/o/v/cb150da802b8435e95e4a424536675a7.mp4"
+  />
+
+
+</div>
  
     
   

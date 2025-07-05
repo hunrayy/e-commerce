@@ -169,7 +169,7 @@ export const AuthProvider = ({children}) => {
 }
 
 
-// 3. Use the provider 
+// // 3. Use the provider 
 export const useAuth = () => {
 
     return useContext(AuthContext)

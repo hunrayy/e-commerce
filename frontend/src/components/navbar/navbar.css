@@ -97,6 +97,7 @@
     color: black;
     position: absolute;
     min-width: 138px;
+    width: 150px;
     padding: 10px 0;
     border-radius: 5px;
     animation-name: account-details-dropdown-list;
@@ -121,6 +122,16 @@
 .account-details-dropdown-list li:hover{
     background-color: rgba(128, 128, 128, 0.055);
 }
+
+.home-page-nav-item{
+    font-weight: bold;
+    color: white;
+    text-decoration: none;
+}
+.home-page-nav-item:hover {
+    color: #f8a5c2;
+    transition: .3s;
+  }
 
 
 

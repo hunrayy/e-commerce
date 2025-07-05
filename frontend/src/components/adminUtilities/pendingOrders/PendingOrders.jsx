@@ -9,6 +9,7 @@ import { useState, useEffect, useContext } from 'react'
 import BasicLoader from '../../loader/BasicLoader'
 import { toast } from 'react-toastify'
 import { CurrencyContext } from '../../all_context/CurrencyContext';
+import PaginationButtons from '../../paginationButtons/PaginationButtons'
     const PendingOrders = () => {
     const { selectedCurrency, convertCurrency, currencySymbols } = useContext(CurrencyContext);
     const [pendingOrders, setPendingOrders] = useState([])
@@ -20,23 +21,33 @@ import { CurrencyContext } from '../../all_context/CurrencyContext';
     const [verificationText, setVerificationText] = useState('');
     const [verificationTextError, setVerificationTextError] = useState('');
     const [isLoading, setIsLoading] = useState(false)
-    
+    const [currentPage, setCurrentPage] = useState(1);
+    const [perPage, setPerPage] = useState(20);
+    const [totalPendingOrders, setTotalPendingOrders] = useState([]);
 
     
 
     const getPendingOrders = async () => {
+
         const token = Cookies.get("authToken")
         const feedback = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/admin/get-orders`, {
             params: {
-                status: 'pending'
+                status: 'pending',
+                perPage: perPage,
+                page: currentPage,
             },
             headers: {
                 Authorization: `Bearer ${token}`
             }
         })
         console.log(feedback)
-        setPendingOrdersLoading(false)
-        setPendingOrders(feedback.data.data)
+        if(feedback.data.code == 'success'){
+            setPendingOrdersLoading(false)
+            setPendingOrders(feedback.data.data.data)
+            setCurrentPage(feedback.data.data.current_page)
+            setTotalPendingOrders(feedback.data.data);
+
+        }
     }
     const handleViewMorePendingOrders = (order) => {
         setSingleOrder(order)
@@ -45,7 +56,7 @@ import { CurrencyContext } from '../../all_context/CurrencyContext';
 
     useEffect(()=> {
         getPendingOrders()
-    }, [])
+    }, [currentPage, perPage])
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -136,12 +147,14 @@ import { CurrencyContext } from '../../all_context/CurrencyContext';
         </div>
     }
 
+    const showPaginationButtons = true
+
     
     return <div>
         <div className="pending-orders-container">
             <div className="table-responsiv">
             <table className="table caption-top table-bordered">
-        <caption>Pending Orders</caption>
+            <caption className='px-2'>Pending Orders</caption>
             <thead>
                 <tr>
                 <th scope="col">#</th>
@@ -156,7 +169,8 @@ import { CurrencyContext } from '../../all_context/CurrencyContext';
 
                 return <tbody key={index}>
                     <tr>
-                    <th scope="row">{pendingOrders.length - index}</th>
+                    {/* <th scope="row">{pendingOrders.length - index}</th> */}
+                    <th scope="row">{index + 1}</th>
                     <td>{pendingOrder.tracking_id}</td>
                     {/* <td>{pendingOrder.email}</td> */}
                     <td>{formatDate(pendingOrder.created_at)}</td>
@@ -168,6 +182,7 @@ import { CurrencyContext } from '../../all_context/CurrencyContext';
             })
         }
         </table>
+            {showPaginationButtons && totalPendingOrders.total > totalPendingOrders.per_page &&  <PaginationButtons currentPage={currentPage} setCurrentPage={setCurrentPage} perPage={perPage} metaData={totalPendingOrders} />}
             </div>
         </div>
 

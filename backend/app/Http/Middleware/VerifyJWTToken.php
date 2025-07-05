@@ -35,9 +35,11 @@ class VerifyJWTToken
             // Verify the token
             $decodedToken = JWT::decode($bearerToken, new Key(env("JWT_SECRET"), 'HS256'));
 
+            // return $decodedToken;
+
             // Attach user email to the request
             $request->merge(['user_email' => $decodedToken->email]);
-            $request->merge(['user_id' => $decodedToken->id]);
+            $request->merge(['user_id' => $decodedToken->id ?? $decodedToken->userId]);
 
             // If verification is successful, continue the request
             return $next($request);

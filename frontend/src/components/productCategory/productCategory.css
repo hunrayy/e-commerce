@@ -22,11 +22,13 @@
 
 .product-category-wrapper{
     width: 100%;
+    cursor: pointer;
     max-width: "300px";
     height: auto;
     position: relative;
     border-radius: 10px;
     box-sizing: border-box;
+    background-color: #c7bec13e;
 }
 
 .product-category-wrapper-image{
@@ -68,4 +70,35 @@
     .product-category-skeleton-loader{
         height: 100px;
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.product-category-wrapper {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.product-category-wrapper:hover {
+  transform: translateY(-5px);
+  /* box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); */
 }

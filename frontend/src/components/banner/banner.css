@@ -126,3 +126,157 @@
     padding: 0; /* Remove padding to prevent gaps */
   }
 }
+
+
+
+
+.new-banner-carousel-container {
+  max-width: 50vw;
+  width: 100%;
+  height: calc(100vh - var(--marginAboveTop));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; /* important to constrain image overflow */
+}
+
+@media (max-width: 767px) {
+  .new-banner-carousel-container {
+    max-width: 100vw;
+    width: 100%;
+    height: 46vh;
+  }
+}
+
+
+
+
+
+
+.carousel,
+.carousel-inner,
+.carousel-item {
+  width: 100%;
+  height: 100%;
+}
+
+.carousel-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Ensure the carousel has a fixed height */
+.custom-fade-carousel,
+.custom-fade-carousel .carousel-inner {
+  height: 100%;
+  background-color: transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Fade effect override with longer duration */
+.custom-fade-carousel.carousel-fade .carousel-item {
+  opacity: 0;
+  transition: opacity 1.5s ease-in;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.custom-fade-carousel.carousel-fade .carousel-item.active {
+  opacity: 1;
+  position: relative; /* Important for proper stacking */
+  z-index: 1;
+}
+
+
+
+
+
+
+
+
+
+
+/* Style the indicator container */
+.custom-fade-carousel .carousel-indicators {
+  bottom: 20px; /* adjust spacing below carousel */
+  justify-content: center;
+}
+
+/* Turn each indicator into a circle */
+.custom-fade-carousel .carousel-indicators [data-bs-target] {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.6); /* light dot color */
+  border: none;
+  margin: 0 6px;
+  transition: background-color 0.3s ease;
+}
+
+/* Active circle */
+.custom-fade-carousel .carousel-indicators .active {
+  /* background-color: #fff; */
+  background-color: #f9eef1;
+
+}
+/* Indicator base style */
+.custom-fade-carousel .carousel-indicators [data-bs-target] {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.4);
+  border: none;
+  margin: 0 6px;
+  transition: background-color 2.5s ease-in-out;
+}
+
+/* Active indicator fades in over 1.5s */
+.custom-fade-carousel .carousel-indicators .active {
+  background-color: #f9eef1;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Base style for all dots */
+.custom-fade-carousel .carousel-indicators [data-bs-target] {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3);
+  border: none;
+  margin: 0 6px;
+  opacity: 0.5;
+  transition: opacity 1.5s ease-in-out, background-color 1.5s ease-in-out;
+}
+
+/* Active dot — fade in with opacity + color */
+.custom-fade-carousel .carousel-indicators .active {
+  background-color: #f9eef1;
+  opacity: 1;
+}

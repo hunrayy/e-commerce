@@ -9,9 +9,18 @@ import { CurrencyContext } from "../all_context/CurrencyContext";
 import Select from "react-select";
 import { useAuth } from "../AuthContext/AuthContext";
 import axios from "axios";
+import useProductCategory from "../productCategory/useProductCategory";
 
 const Navbar = () => {
   const navigate = useNavigate()
+  const {
+      categories,
+      isLoading,
+      isError,
+    } = useProductCategory();
+  
+    // if (isLoading) return <p>Loading categories...</p>;
+    if (isError) return <p>Failed to load categories.</p>;
   const [shownav, setShownav] = useState(false);
   const [dropdown, setDropdown] = useState(false);
   const [searchState, setSearchState] = useState({isSearching: false, searchLoading: false, searchData: null, wordNotFound: null})
@@ -22,8 +31,10 @@ const Navbar = () => {
   const dropdownRef = useRef(null); // Ref for the dropdown menu
   const use_auth = useAuth()
 
-  const { calculateTotalLength } = useContext(CartContext);
-  const totalItems = calculateTotalLength();
+  // const { calculateTotalLength } = useContext(CartContext);
+  // const totalItems = calculateTotalLength();
+  const { cartCount, loading } = useContext(CartContext);
+// const totalItems = calculateTotalLength();
 
   const { selectedCurrency, handleCurrencyChange, currencySymbols, currencyNames } = useContext(CurrencyContext);
   const handleCurrencySelect = (selectedOption) => {
@@ -96,39 +107,91 @@ const Navbar = () => {
     }
 };
 
-  const [categories, setCategories] = useState({
-    loading: true,
-    options: []
-  });
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  useEffect(()=> {
-    axios.get(`${import.meta.env.VITE_BACKEND_URL}/fetch-product-categories`).then((feedback) => {
-        console.log(feedback)
-        if(feedback.data.code == 'error'){
-            setCategories({
-                loading: false,
-                options: []
-            })
-            toast.error(`An error occured while fetching product categories: ${feedback.data.message}`)
-        }else if(feedback.data.code == 'success'){
-            // console.log(feedback)
-            const categoryOptions = feedback.data.data.map(category => ({
-                value: category.id,  // Use the id as the value
-                label: category.name  // Use the name as the label
-            }));
-            setCategories({
-                loading: false,
-                options: categoryOptions
-            })
-        }else{
-            setCategories({
-                loading: false,
-                options: []
-            })
-            toast.error('An error occured while retrieving product categories')
-        }
-    })
-  }, [])
+
+
+
+
+  // const [selectedCategory, setSelectedCategory] = useState(null);
+  // useEffect(()=> {
+  //   axios.get(`${import.meta.env.VITE_BACKEND_URL}/fetch-product-categories`).then((feedback) => {
+  //       console.log(feedback)
+  //       if(feedback.data.code == 'error'){
+         
+  //           toast.error(`An error occured while fetching product categories: ${feedback.data.message}`)
+  //       }else if(feedback.data.code == 'success'){
+  //           // console.log(feedback)
+  //           const categoryOptions = feedback.data.data.map(category => ({
+  //               value: category.id,  // Use the id as the value
+  //               label: category.name  // Use the name as the label
+  //           }));
+  //           setCategories({
+  //               loading: false,
+  //               options: categoryOptions
+  //           })
+  //       }else{
+  //           setCategories({
+  //               loading: false,
+  //               options: []
+  //           })
+  //           toast.error('An error occured while retrieving product categories')
+  //       }
+  //   })
+  // }, [])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // const [categories, setCategories] = useState({
+  //   loading: true,
+  //   options: []
+  // });
+  // const [selectedCategory, setSelectedCategory] = useState(null);
+  // useEffect(()=> {
+  //   axios.get(`${import.meta.env.VITE_BACKEND_URL}/fetch-product-categories`).then((feedback) => {
+  //       console.log(feedback)
+  //       if(feedback.data.code == 'error'){
+  //           setCategories({
+  //               loading: false,
+  //               options: []
+  //           })
+  //           toast.error(`An error occured while fetching product categories: ${feedback.data.message}`)
+  //       }else if(feedback.data.code == 'success'){
+  //           // console.log(feedback)
+  //           const categoryOptions = feedback.data.data.map(category => ({
+  //               value: category.id,  // Use the id as the value
+  //               label: category.name  // Use the name as the label
+  //           }));
+  //           setCategories({
+  //               loading: false,
+  //               options: categoryOptions
+  //           })
+  //       }else{
+  //           setCategories({
+  //               loading: false,
+  //               options: []
+  //           })
+  //           toast.error('An error occured while retrieving product categories')
+  //       }
+  //   })
+  // }, [])
+
+
+
   // Effect to handle clicks outside the dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -140,6 +203,11 @@ const Navbar = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+  console.log("Navbar cartCount updated:", cartCount);
+}, [cartCount]);
+
 
   return (
     <div>
@@ -162,50 +230,56 @@ const Navbar = () => {
                       <i style={{ cursor: "pointer" }} className="fa-solid fa-xmark" onClick={() => setShownav(false)}></i>
                     </div>
                     <div>
-                      <Link to="/" style={{ fontWeight: "bold", color: "white", textDecoration: "none" }}>Home</Link>
+                      <Link to="/" className="home-page-nav-item">Home</Link>
                     </div>
                     {/* <div>
                       <Link to='/collections/all' style={{ fontWeight: "bold", color: "white", textDecoration: "none" }}>Shop all</Link>
                     </div> */}
-                    <div style={{color: "white"}}>
-                        <div onClick={() => setProductCategoryDropdown(!productCategoryDropdown)} style={{cursor: "pointer", width: "fit-content"}}>
+                    <div style={{color: ""}}>
+                        <div className="home-page-nav-item" onClick={() => setProductCategoryDropdown(!productCategoryDropdown)} style={{cursor: "pointer", width: "fit-content"}}>
                             <span>Shop all</span> {productCategoryDropdown ? <i className="fa-solid fa-caret-up"></i> : <i className="fa-solid fa-caret-down"></i>}
                         </div>
                         <div className={`admin-sidebar-dropdown-wrapper ${productCategoryDropdown ? 'open' : ''}`} style={{fontSize: "17px"}}>
-                          <div onClick={()=> {navigate('/collections/all/?category=All Products'), setShownav(false)}}className="mt-2">All products</div>
-                                  {categories.options && categories.options.map((category, index) => {
+                          <div className="home-page-nav-item mt-2" style={{fontWeight: "normal"}} onClick={()=> {navigate('/collections/all/?category=All Products'), setShownav(false)}}>All products</div>
+                                  {/* {categories && categories.map((category, index) => {
                                       return <div key={index} onClick={() => {navigate(`/collections/all/?category=${category.label}`), setShownav(false)}}>{category.label}</div>
-                                  })}
+                                  })} */}
+                                  {categories !== null ? categories.map((category, index) => {
+                                    console.log(category)
+                                    return <div key={index} className="home-page-nav-item" style={{fontWeight: "normal"}} onClick={() => {navigate(`/collections/all/?category=${category.name}`), setShownav(false)}}>{category.name}</div>
+                                    }) 
+                                  : "Loading..."}
+                                  {isError && <div className="ml-2">Failed to fetch categories</div>}                                  
                           </div>
                         </div>
-                    <div>
+                    {/* <div>
                       <label htmlFor="currency" style={{ fontWeight: "bold", color: "white"}}>Currency: </label>
                       <Select
                         options={sortedCurrencyOptions}
                         onChange={handleCurrencySelect}
                         value={sortedCurrencyOptions.find(option => option.value === selectedCurrency)}
                       />
+                    </div> */}
+                    <div>
+                      <Link to='/pages/contact' className="home-page-nav-item">contact</Link>
                     </div>
                     <div>
-                      <Link to='/pages/contact' style={{ fontWeight: "bold", color: "white", textDecoration: "none" }}>contact</Link>
+                      <Link to="/policies/refund-policy" onClick={() => setShownav(false)} className="home-page-nav-item">Refund policy</Link>
                     </div>
                     <div>
-                      <Link to="/policies/refund-policy" style={{ fontWeight: "bold", color: "white", textDecoration: "none" }}>Refund policy</Link>
+                      <Link to="/policies/shipping-policy" onClick={() => setShownav(false)} className="home-page-nav-item">Shipping policy</Link>
                     </div>
                     <div>
-                      <Link to="/policies/shipping-policy" style={{ fontWeight: "bold", color: "white", textDecoration: "none" }}>Shipping policy</Link>
+                      <Link to="/policies/delivery-policy" onClick={() => setShownav(false)} className="home-page-nav-item">Delivery policy</Link>
                     </div>
                     <div>
-                      <Link to="/policies/delivery-policy" style={{ fontWeight: "bold", color: "white", textDecoration: "none" }}>Delivery policy</Link>
-                    </div>
-                    <div>
-                      <Link to="/order/tracking" style={{ fontWeight: "bold", color: "white", textDecoration: "none" }}>Tracking</Link>
+                      <Link to="/order/tracking" className="home-page-nav-item">Tracking</Link>
                     </div>
                     <div style={{display: "flex", gap: "15px"}}>
-                      <a style={{ color: "white" }} href="https://www.instagram.com/beauty_bykiaraa/" target="_blank">
+                      <a className="home-page-nav-item" href="https://www.instagram.com/beauty_bykiaraa/" target="_blank">
                         <i className="fa-brands fa-instagram"></i>
                       </a>
-                      <a style={{ color: "white" }} href="https://www.tiktok.com/@beauty_bykiara" target="_blank">
+                      <a className="home-page-nav-item" href="https://www.tiktok.com/@beauty_bykiara" target="_blank">
                         <i className="fa-brands fa-tiktok"></i>
                       </a>
                     </div>
@@ -272,14 +346,16 @@ const Navbar = () => {
                     <i className="fa-solid fa-magnifying-glass m-1 me-md-2"></i>
                     <p className="d-none d-md-block mb-0">Search</p>
                   </div >
-                  {/* <Link to="/cart" style={{ fontWeight: "bold" }} className="border rounded py-1 px-3 nav-link d-flex align-items-center">
+                  <Link to="/cart" className="nav-link d-flex align-items-center" style={{ fontWeight: "bold" }}>
+                    <i className="fas fa-shopping-cart m-1 me-md-2"></i>
+                    <p className="d-none d-md-block mb-0">My cart</p>&nbsp;
+                    {loading ? '...' : cartCount}
+                  </Link>
+
+                  {/* <Link to="/cart" style={{ fontWeight: "bold" }} className="nav-link d-flex align-items-center">
                     <i className="fas fa-shopping-cart m-1 me-md-2"></i>
                     <p className="d-none d-md-block mb-0">My cart</p>&nbsp;{totalItems}
                   </Link> */}
-                  <Link to="/cart" style={{ fontWeight: "bold" }} className="nav-link d-flex align-items-center">
-                    <i className="fas fa-shopping-cart m-1 me-md-2"></i>
-                    <p className="d-none d-md-block mb-0">My cart</p>&nbsp;{totalItems}
-                  </Link>
                 </div>
               </div>
             </div>

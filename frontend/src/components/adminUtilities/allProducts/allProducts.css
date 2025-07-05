@@ -84,10 +84,10 @@
         align-items: start;
     }
     .search-container {
-        margin-top: 20px;
+        /* margin-top: 20px; */
     }
     .search-container-fixed {
-        margin-top: 90px;
+        /* margin-top: 90px; */
     }
 }
 
@@ -130,7 +130,7 @@
     z-index: 3;
 }
 .custom-modal-card {
-    margin-top: 50px;
+    /* margin-top: 50px; */
     opacity: 0; /* Initially hidden */
     transform: translateY(-50px); /* Start slightly above */
     animation: slideDown 0.5s ease forwards; /* Apply the animation */

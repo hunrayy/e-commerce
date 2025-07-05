@@ -246,11 +246,26 @@ class ProductController extends Controller
             ]);
 
             //update the cache to hold the current data
-            $allProducts = Product::orderBy('created_at', 'desc')->get()->toArray(); //  paginate the results
+            // Check if allProducts cache exists
+            $cachedProducts = Cache::get('allProducts');
 
-            //save all products fetched to the cache
-            Cache::put('allProducts', json_encode($allProducts, true));
-    
+            $newProduct = Product::latest()->first(); // the one just created
+
+            if ($cachedProducts) {
+                // Decode the cached data
+                $decoded = json_decode($cachedProducts, true);
+
+                // Prepend the newly created product
+                array_unshift($decoded, $newProduct->toArray());
+
+                // Update the cache
+                Cache::put('allProducts', json_encode($decoded), now()->addWeek());
+            } else {
+                // Cache doesn't exist, fetch all from DB and cache it
+                $allProducts = Product::orderBy('created_at', 'desc')->get()->toArray();
+                Cache::put('allProducts', json_encode($allProducts), now()->addWeek());
+            }
+
             
             return response()->json([
                 'message' => 'Product created successfully.',
@@ -304,19 +319,80 @@ class ProductController extends Controller
     }
 
 
-    public function getAllProducts(Request $request){
+    // public function getAllProducts(Request $request){
+    //     $category = $request->query('productCategory');
+    //     $page = (int) $request->query('page', 1);
+    //     $perPage = (int) $request->query('perPage', 12);
+
+    //     // If category is "All products", return everything
+    //     if (strtolower($category) === "all products") {
+    //         return $this->fetchAndPaginateProducts(Product::orderBy('created_at', 'desc'), $page, $perPage, "All products fetched successfully");
+    //     }
+
+    //     $categoryId = null;
+
+    //     // Check if category exists (case insensitive)
+    //     if ($category) {
+    //         $categoryRecord = ProductsCategory::whereRaw('LOWER(name) = ?', [strtolower($category)])->first();
+    //         if (!$categoryRecord) {
+    //             return response()->json([
+    //                 'code' => 'error',
+    //                 'message' => 'Category not found',
+    //                 'data' => [
+    //                     'data' => [],
+    //                     'total' => 0,
+    //                     'current_page' => 1,
+    //                     'per_page' => $perPage,
+    //                 ],
+    //             ]);
+    //         }
+    //         $categoryId = $categoryRecord->id;
+    //     }
+
+    //     // If no category is passed, fetch products with category_id = null
+    //     $query = Product::orderBy('created_at', 'desc');
+    //     if ($category === null) {
+    //         $query->whereNull('category_id');
+    //     } else {
+    //         $query->where('category_id', $categoryId);
+    //     }
+
+    //     return $this->fetchAndPaginateProducts($query, $page, $perPage, "Filtered products fetched successfully");
+    // }
+
+
+
+
+    public function getAllProducts(Request $request) {
         $category = $request->query('productCategory');
         $page = (int) $request->query('page', 1);
         $perPage = (int) $request->query('perPage', 12);
 
-        // If category is "All products", return everything
+        // ====> Handle "All products"
         if (strtolower($category) === "all products") {
-            return $this->fetchAndPaginateProducts(Product::orderBy('created_at', 'desc'), $page, $perPage, "All products fetched successfully");
+            // Try to get all products from cache
+            $allProducts = Cache::remember('allProducts', now()->addMinutes(10), function () {
+                return Product::orderBy('created_at', 'desc')->get();
+            });
+
+            // Paginate the in-memory collection
+            $paginated = $allProducts->slice(($page - 1) * $perPage, $perPage)->values(); // use values() to reset keys
+
+            return response()->json([
+                'code' => 'success',
+                'message' => 'All products fetched successfully',
+                'data' => [
+                    'data' => $paginated,
+                    'total' => $allProducts->count(),
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                ],
+            ]);
         }
 
+        // ====> Handle filtered categories
         $categoryId = null;
 
-        // Check if category exists (case insensitive)
         if ($category) {
             $categoryRecord = ProductsCategory::whereRaw('LOWER(name) = ?', [strtolower($category)])->first();
             if (!$categoryRecord) {
@@ -334,7 +410,6 @@ class ProductController extends Controller
             $categoryId = $categoryRecord->id;
         }
 
-        // If no category is passed, fetch products with category_id = null
         $query = Product::orderBy('created_at', 'desc');
         if ($category === null) {
             $query->whereNull('category_id');

@@ -1,8 +1,7 @@
-
 import CheckoutHeader from "../../components/checkoutHeader/CheckoutHeader"
 import "./checkout.css"
 import axios from "axios"
-import { useState, useEffect, useContext } from "react"
+import { useState, useEffect, useContext, useRef } from "react"
 import Form from 'react-bootstrap/Form';
 import { CartContext } from "../cart/CartContext";
 import { CurrencyContext } from "../../components/all_context/CurrencyContext";
@@ -13,10 +12,13 @@ import Cookies from "js-cookie";
 import Loader from "../../components/loader/Loader";
 import { calculateTotal } from "../cart/CartTotal";
 import CartTotal from "../cart/CartTotal";
+import { useFlutterwave, FlutterWaveButton, closePaymentModal } from 'flutterwave-react-v3';
+import logo from '../../../public/beautybykiara_logo.png'
+import PaymentSuccessModal from "../../components/paymentSucessModal/PaymentSuccessModal";
 const CheckOut = () => {
   const use_auth = useAuth()
   const navigate = useNavigate()
-  const { cartProducts, addToCart, updateCartItemQuantity } = useContext(CartContext);
+  const { cartProducts, setCartProducts, addToCart, updateCartItemQuantity } = useContext(CartContext);
   const { selectedCurrency, convertCurrency, currencySymbols, currentCurrencyCode } = useContext(CurrencyContext);
 
 
@@ -26,9 +28,9 @@ const CheckOut = () => {
     numberOfDaysForDomesticDelivery: null,
     numberOfDaysForInternationalDelivery: null
   })
-  const [shippingFeeInNaira, setShippingFeeInNaira] = useState({
-    domesticShippingFeeInNaira: null,
-    internationalShippingFeeInNaira: null
+  const [shippingFee, setShippingFee] = useState({
+    domesticShippingFee: null,
+    internationalShippingFee: null
   })
   const [checkoutTotal, setCheckoutTotal] = useState()
   const [selectedCountry, setSelectedCountry] = useState('')
@@ -98,50 +100,120 @@ const CheckOut = () => {
 
       // Handle form submission
     const token = Cookies.get("authToken")
+      const [paymentSuccessModalOpen, setPaymentSuccessModalOpen] = useState(false);
+
+
+      const paymentHandledRef = useRef(false);
+
     const handleSubmit = (e) => {
       e.preventDefault();
-      if (validateForm()) {
-        setLoading(true)
-
-        axios.post(`${import.meta.env.VITE_BACKEND_URL}/flutterwave/make-payment`, formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        ).then((feedback) => {
-          console.log(feedback)
-          if(feedback.data.status == "success"){
-            window.location.href = feedback.data.data.link;
-
-          }else if(feedback.data.error){
-              toast.error(feedback.data.error);
-          }else if(feedback.data.code == "error"){
-            toast.error(feedback.data.reason)
-          }else {
-              // Handle the error if the approval link is missing
-              toast.error("There was an issue connecting to the payment provider. Please try again.");
-            }
-
-
-
-
-          // if(feedback.data.status){
-          //   window.location.href = feedback.data.data.authorization_url;
-          // }else if(feedback.data.code == "error"){
-          //   toast.error(feedback.data.reason)
-          // }
-
-
-        }).finally(()=> {
-          setLoading(false)
-        })
-      } else {
+    
+      if (!validateForm()) {
         toast.error("Please correct the errors in the form.");
+        return;
       }
-        // axios.post(`${import.meta.env.VITE_BACKEND_URL}/paystack/make-payment`, formData,
+    
+      setLoading(true);
+    
+      axios.post(`${import.meta.env.VITE_BACKEND_URL}/flutterwave/generate-token-for-payment`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((feedback) => {
+        console.log(feedback)
+        if (feedback.data.code === 'success') {
+          const detailsToken = feedback.data.data;
+    
+          // Create a new config that includes the token in meta
+          const updatedConfig = {
+            public_key: import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY,
+            tx_ref: Date.now().toString(),
+            amount: formData.checkoutTotal,
+            currency: formData.currency,
+            payment_options: "card,ussd,banktransfer",
+            customer: {
+              email: formData.email,
+              phonenumber: formData.phoneNumber,
+              name: `${formData.firstname} ${formData.lastname}`,
+            },
+            customizations: {
+              title: "Beautybykiara",
+              description: "Payment for order items from Beauty By kiara",
+              logo: logo,
+            },
+            meta: {
+              detailsToken: detailsToken, // <- pass the token here
+            },
+          };
 
+          paymentHandledRef.current = false;
+          const handleFlutterPayment = useFlutterwave(updatedConfig);
+    
+          handleFlutterPayment({
+            callback: (response) => {
+              // return console.log("Payment response:", response);
+              
+    
+              if (response.status === "successful" || response.status === "completed") {
+                axios.get(`${import.meta.env.VITE_BACKEND_URL}/flutterwave/validate-payment`, {
+                  params: {
+                    tx_ref: updatedConfig.tx_ref,
+                },headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                })
+                .then((res) => {
+                  console.log(res)
+                  if (res.data.code === "success" || res.data.code === "already-made") {
+                    paymentHandledRef.current = true;
+                    setPaymentSuccessModalOpen(true)
+                    localStorage.removeItem('cart_items'); //clear cart items in local storage
+                    setCartProducts((prev) => ({
+                        ...prev,
+                        products: []
+                    }))
+                  } else {
+                    toast.error(`Payment verification failed: ${res.data.message}`);
+                  }
+                  setLoading(false);
+                })
+                .catch((error) => {
+                  toast.error(`An error occurred during payment verification: ${error.message}`);
+                  setLoading(false);
+                });
+              } else {
+                toast.error("Payment was not successful.");
+                setLoading(false);
+              }
+    
+              closePaymentModal();
+            },
+            onClose: () => {
+              if (!paymentHandledRef.current) {
+                toast.info("Payment process was closed.");
+              }
+              setLoading(false);
+            },
+          
+          });
+    
+        } else if (feedback.data.code === 'error') {
+          toast.error(feedback.data.message);
+          setLoading(false);
+        } else {
+          
+          toast.error("An error occurred while initiating payment, please try again.");
+          setLoading(false);
+        }
+      })
+      .catch((error) => {
+        toast.error("Something went wrong while contacting the server.");
+        console.log(error)
+        setLoading(false);
+      });
     };
+    
 
 
   useEffect(() => {
@@ -157,23 +229,24 @@ const CheckOut = () => {
       currency: selectedCurrency
     }));
 
-    axios.get("https://countriesnow.space/api/v0.1/countries/states", { timeout: 10000 }) // timeout set to 10 seconds
+    // axios.get("https://countriesnow.space/api/v0.1/countries/states", { timeout: 10000 }) // timeout set to 10 seconds
+    // .then((feedback) => {
+    //   console.log(feedback)
+    //   setCountries(feedback.data.data)
+    // }).catch((error) => {
+    //   // console.error("Error fetching countries and states:", error)
+    //   toast.error("Failed to fetch countries and states. Please try again later.");
+    // })
+
+    axios.get(`${import.meta.env.VITE_BACKEND_URL}/get-all-countries-and-states`, { timeout: 10000 }) // timeout set to 10 seconds
     .then((feedback) => {
       console.log(feedback)
-      setCountries(feedback.data.data)
+      setCountries(feedback.data.data.data)
     }).catch((error) => {
       // console.error("Error fetching countries and states:", error)
       toast.error("Failed to fetch countries and states. Please try again later.");
     })
 
-    // axios.get("https://restcountries.com/v3.1/all", { timeout: 10000 }) // timeout set to 10 seconds
-    // .then((feedback) => {
-    //   console.log(feedback)
-    //   setCountries(feedback.data)
-    // }).catch((error) => {
-    //   // console.error("Error fetching countries and states:", error)
-    //   toast.error("Failed to fetch countries and states. Please try again later.");
-    // })
 
     axios.get(`${import.meta.env.VITE_BACKEND_URL}/get-number-of-days-of-delivery`,{
       headers: {
@@ -187,36 +260,41 @@ const CheckOut = () => {
           numberOfDaysForDomesticDelivery: feedback.data.data.numberOfDaysForDomesticDelivery,
           numberOfDaysForInternationalDelivery: feedback.data.data.numberOfDaysForInternationalDelivery
         })
-        setShippingFeeInNaira({
-          domesticShippingFeeInNaira: feedback.data.data.domesticShippingFeeInNaira,
-          internationalShippingFeeInNaira: feedback.data.data.internationalShippingFeeInNaira
+        setShippingFee({
+          domesticShippingFee: feedback.data.data.domesticShippingFee,
+          internationalShippingFee: feedback.data.data.internationalShippingFee
         })
     
       }
     })
   }, [cartProducts, selectedCurrency, convertCurrency])
+   // Set user's current country using IP geolocation
+  useEffect(() => {
+    if (countries.length === 0) return; // wait until countries are loaded
 
-//   function calculateExpectedDateOfDelivery(selectedCountry) {
-//     const countriesOfWarehouseLocation = [];
-//     countriesOfWarehouseLocation.push(countryOfWarehouseLocation)
-//     console.log(countriesOfWarehouseLocation)
-//     const numberOfDaysForDomesticDelivery = numberOfDaysForDelivery.numberOfDaysForDomesticDelivery; // Example number of days for domestic delivery
-//     const numberOfDaysForInternationalDelivery = numberOfDaysForDelivery.numberOfDaysForInternationalDelivery; // Example number of days for international delivery
+    axios
+      .get("https://ipwho.is/")
+      .then((res) => {
+        const userCountry = res.data.country;
+        console.log("User's country:", userCountry);
 
-//     const currentDate = new Date();
+        const matchedCountry = countries.find(
+          (country) => country.name.toLowerCase() === userCountry.toLowerCase()
+        );
 
-//     let expectedDateOfDelivery;
-
-//     if (countriesOfWarehouseLocation.includes(selectedCountry)) {
-//         // Calculate expected date for domestic delivery
-//         expectedDateOfDelivery = new Date(currentDate.setDate(currentDate.getDate() + numberOfDaysForDomesticDelivery));
-//     } else {
-//         // Calculate expected date for international delivery
-//         expectedDateOfDelivery = new Date(currentDate.setDate(currentDate.getDate() + numberOfDaysForInternationalDelivery));
-//     }
-
-//     return expectedDateOfDelivery.toLocaleDateString(); // Format the date as needed
-// }
+        if (matchedCountry) {
+          setFormData((prevData) => ({
+            ...prevData,
+            country: matchedCountry.name,
+            state: "",
+          }));
+          setStates(matchedCountry.states || []);
+        }
+      })
+      .catch((err) => {
+        console.error("Geolocation failed:", err);
+      });
+  }, [countries]);
 
 function calculateExpectedDateOfDelivery(selectedCountry) {
   if(!selectedCountry){
@@ -249,7 +327,7 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
       return "..."
     }
     if (countryOfWarehouseLocation == selectedCountry) {
-      let convertedPrice = convertCurrency(shippingFeeInNaira.domesticShippingFeeInNaira, 'NGN', selectedCurrency);
+      let convertedPrice = convertCurrency(shippingFee.domesticShippingFee, import.meta.env.VITE_CURRENCY_CODE, selectedCurrency);
         // Calculate shipping fee for local delivery
 
         // return `${currentCurrencyCode} ${convertedPrice.toLocaleString()}`
@@ -257,7 +335,7 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
       
     } else {
         // Calculate shipping fee for international delivery
-        let convertedPrice = convertCurrency(shippingFeeInNaira.internationalShippingFeeInNaira, 'NGN', selectedCurrency);
+        let convertedPrice = convertCurrency(shippingFee.internationalShippingFee, import.meta.env.VITE_CURRENCY_CODE, selectedCurrency);
         // Calculate shipping fee for local delivery
 
         // return `${currentCurrencyCode} ${convertedPrice.toLocaleString()}`
@@ -307,9 +385,11 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
     `26", 26", 26"`,
     `28", 28", 28"`,
   ];
+
   return <div>
     <CheckoutHeader />
     {loading && <Loader />}
+    <PaymentSuccessModal isOpen={paymentSuccessModalOpen} />
     <section className=" checkout-container">
       <div className="container">
         <div className="row">
@@ -320,13 +400,13 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
                 <div className="row">
                   <h5 className="card-title mb-3">Contact</h5>
                   <div className="mb-3 form-floating">
-                    <input type="email" placeholder="Email" value={formData.email} style={{fontSize: "14px"}} disabled className="form-control form-control-lg" />
-                    <label className="mx-4">Email</label>
+                    <input type="email" placeholder="Email" value={formData.email} disabled className="form-control" />
+                    <label className="mx-3">Email</label>
                   </div>
                   <h5 className="card-title mb-3">Delivery</h5>
 
                   <div className="col-12 mb-3 form-floating">
-                    <Form.Select size="lg" className={`form-select-lg ${errors.country && 'is-invalid'}`} style={{fontSize: "14px"}} name="country" value={formData.country} onChange={handleCountryChange}>
+                    <Form.Select className={`form-select ${errors.country && 'is-invalid'}`} name="country" value={formData.country} onChange={handleCountryChange}>
                     <option value="">Select Country</option>
                           {countries.map((country) => (
                             <option key={country.iso3} value={country.name}>
@@ -338,23 +418,7 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
                     {errors.country && <small className="text-danger">{errors.country}</small>}
 
                   </div>
-                  {/* <div className="col-12 mb-3 form-floating">
-                    <Form.Select size="lg" className={`form-select-lg ${errors.country && 'is-invalid'}`} style={{fontSize: "14px"}} name="country" value={formData.country} onChange={handleCountryChange}>
-                    <option value="">Select Country</option>
-                          
-                          {countries
-                            .sort((a, b) => a.name.common.localeCompare(b.name.common)) // Sort in descending order
-                            .map((country, index) => (
-                              <option key={index} value={country.name.common}>
-                                {country.name.common}
-                              </option>
-                          ))}
-                    </Form.Select>
-                    <label className="mx-3">Country</label>
-                    {errors.country && <small className="text-danger">{errors.country}</small>}
-                  </div> */}
-                 
-
+    
                   <div className="col-12 col-lg-6 mb-3 form-floating">
                     <input type="text" id="typeText" placeholder="First name" value={formData.firstname} disabled className="form-control" />
                     <label className="mx-3">First name</label>
@@ -374,12 +438,10 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
 
                   <div className="col-12 col-lg-4 mb-3 form-floating">
                     <Form.Select
-                      size="lg"
-                      className={`form-select-lg ${errors.state && 'is-invalid'}`}
+                      className={` ${errors.state && 'is-invalid'}`}
                       name="state"
                       value={formData.state}
                       onChange={handleInputChange}
-                      style={{fontSize: "14px"}}
                     >
                       <option value="">Select State/Region</option>
                       {states.map((state, index) => (
@@ -404,12 +466,42 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
                     <label className="mx-3">Postal Code(optional)</label>
                   </div>
 
-                  <div className="mb-5 form-floating">
-                    {/* <input type="number" min="1" placeholder="Phone number" className={`form-control form-control-lg ${errors.phoneNumber && 'is-invalid'}`} name="phoneNumber" value={formData.phoneNumber} onChange={handleInputChange} /> */}
+                  {/* <div className="mb-5 form-floating">
                     <input type="text" placeholder="Phone number" className={`form-control form-control-lg ${errors.phoneNumber && 'is-invalid'}`} name="phoneNumber" value={formData.phoneNumber} onChange={handleInputChange} style={{fontSize: "14px"}} />
                     <label className="mx-4">Phone number</label>
                     {errors.phoneNumber && <small className="text-danger">{errors.phoneNumber}</small>}
-                  </div>
+                  </div> */}
+
+
+
+                  <div className="mb-5 form-floating">
+
+                    <input
+                      type="text"
+                      placeholder="Phone number"
+                      className={`form-control ${errors.phoneNumber && 'is-invalid'}`}
+                      name="phoneNumber"
+                      value={formData.phoneNumber}
+                      onChange={(e) => {
+                        const cleanedValue = e.target.value.replace(/[^0-9+]/g, ""); // remove all except numbers and +
+                        handleInputChange({
+                          target: {
+                            name: "phoneNumber",
+                            value: cleanedValue,
+                          },
+                        });
+                      }}
+                    />
+                    <label className="mx-4">Phone number </label>
+                    {!errors.phoneNumber && <small className="text-muted">Must be a valid phone number preceeded by a valid country code</small>}
+                    {errors.phoneNumber && <small className="text-danger">{errors.phoneNumber}</small>}
+                                    
+                  </div> 
+
+
+
+
+
                 </div>
 
                 {/* <hr className="my-4" /> */}
@@ -425,7 +517,7 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
                       <div className="p-3">
                         <input className="form-check-input" type="radio" readOnly checked />
                         <h5 className="col-3" style={{fontFamily: "Outfit", width: "100%"}}>Flutterwave</h5>
-                        <small>After clicking pay now, you will be redirected to make payment</small>
+                        <small>After clicking pay now, you will be required to make payment</small>
                       </div>
                         <div>
                           {/* <img style={{width: "100%", height: "auto", maxWidth: "250px"}} src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTr2wrfKVK1n5mjpmuHbIKlNb3PbTLBdwFEAw&s" alt="paypal logo" /> */}
@@ -451,14 +543,14 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
 
                 
                 {cartProducts.products.slice().reverse().map((product, index) => {
-                  // console.log(product)
+                  console.log(product)
                   const currencySymbol = currencySymbols[selectedCurrency];
-                  let convertedPrice = convertCurrency(product.productPriceInNaira, 'NGN', selectedCurrency);
+                  let convertedPrice = convertCurrency(product.productPrice, import.meta.env.VITE_CURRENCY_CODE, selectedCurrency);
                     convertedPrice = Number(convertedPrice);
-                    const productPrices = [product.productPriceInNaira12Inches, product.productPriceInNaira14Inches, 
-                      product.productPriceInNaira16Inches, product.productPriceInNaira18Inches, product.productPriceInNaira20Inches, 
-                      product.productPriceInNaira22Inches, product.productPriceInNaira24Inches, 
-                      product.productPriceInNaira26Inches, product.productPriceInNaira28Inches
+                    const productPrices = [product.productPrice12Inches, product.productPrice14Inches, 
+                      product.productPrice16Inches, product.productPrice18Inches, product.productPrice20Inches, 
+                      product.productPrice22Inches, product.productPrice24Inches, 
+                      product.productPrice26Inches, product.productPrice28Inches
                     ]
                   return <div className="d-flex align-items-center mb-4" key={index}>
                     <div className="me-3 position-relative">
@@ -476,7 +568,7 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
                         <div>
                         {lengthsOfHair.map((length, index) =>
                                 product.lengthPicked === length &&
-                                <div>{convertCurrency(productPrices[index], 'NGN', selectedCurrency).toLocaleString()} {product.quantity > 1 && <span>&nbsp; * &nbsp; {product.quantity}</span>}</div>
+                                <div>{currencySymbols[selectedCurrency]} {convertCurrency(productPrices[index], import.meta.env.VITE_CURRENCY_CODE, selectedCurrency).toLocaleString()} {product.quantity > 1 && <span>&nbsp; * &nbsp; {product.quantity}</span>}</div>
                               )}
                         </div>
                       </div>
@@ -495,7 +587,9 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
                     <p className="mb-2">
                     {(() => {
                         if(!formData.country){
-                          return "..."
+                          // return <span style={{fontSize: "12px"}}>...<i class="fa fa-question-circle" title="Expected date of delivery can only be present after selecting a country" aria-hidden="true"></i></span>
+                        return <span className="placeholder" style={{width: "80px"}}></span>
+
                         }else{
                           return `${formData.expectedDateOfDelivery}`; // Combine currency symbol with formatted total
                         }
@@ -508,7 +602,9 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
                   <p className="mb-2">
                   {(() => {
                       if(!formData.country){
-                        return "..."
+                        // return <span style={{fontSize: "12px"}}>...<i class="fa fa-question-circle" title="Shipping fee can only be present after selecting a country" aria-hidden="true"></i></span>
+                        return <span className="placeholder" style={{width: "80px"}}></span>
+
                       }else{
                         return `${currencySymbols[selectedCurrency]} ${calculateShippingFee(formData.country)}`; // Combine currency symbol with formatted total
                       }
@@ -520,9 +616,9 @@ function calculateExpectedDateOfDelivery(selectedCountry) {
                   <p className="mb-2 fw-bold">Total price:</p>
                   <div className="mb-2 fw-bold"> {(() => {
                       if(!formData.country){
-                        return <div className="spinner-grow" style={{width: "15px", height: "15px"}} role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
+                        // return <span style={{fontSize: "12px"}}>...<i class="fa fa-question-circle" title="Total price can only be calcuated after selecting a country" aria-hidden="true"></i></span>
+                        return <span className="placeholder" style={{width: "80px"}}></span>
+
                       }else{
                         return `${currencySymbols[selectedCurrency]}`; // Combine currency symbol with formatted total
                       }

@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Models\User;
 
 return new class extends Migration
 {
@@ -14,6 +15,7 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('firstname');
+            $table->string('lastname');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
@@ -35,6 +37,17 @@ return new class extends Migration
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
+
+
+        // User::create([
+        //     'id' => (string) Str::uuid(),
+        //     'firstname' => 'john',
+        //     'lastname' => 'doe',
+        //     'email' => 'johndoe@gmail.com',
+        //     'password' => Hash::make('johndoe'),
+        //     'user' => 'admin',
+        //     'is_an_admin' => true,
+        // ]);
     }
 
     /**

@@ -42,27 +42,32 @@ class AuthController extends Controller
         return JWT::encode($payload, $key, 'HS256');
     }
 
-    //function to send email verification code
     public function sendEmailVerificationCode(Request $request){
         $request->validate([
-            'email' => 'string|required'
+            'email' => 'string|required',
+            'previousEmail' => 'string|nullable'
         ]);
+
         $email = $request->email;
-        //check if email already exists in database
-        $checkIfEmailExists = User::where('email', $email)->first();
-        if($checkIfEmailExists){
-            return response()->json([
-                'code' => 'error',
-                'message' => 'Email already in use'
-            ]);
+        $previousEmail = $request->previousEmail;
+
+        // If email is different from previousEmail, check for duplicates
+        if($email !== $previousEmail){
+            $checkIfEmailExists = User::where('email', $email)->first();
+            if($checkIfEmailExists){
+                return response()->json([
+                    'code' => 'error',
+                    'message' => 'Email already in use'
+                ]);
+            }
         }
+
         $verificationCode = $this->generateVerificationCode();
 
-        //use PHPMailer to send the email
+        // Use PHPMailer to send the email
         $mail = new PHPMailer(true);
 
-        try{
-            // Server settings
+        try {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
@@ -71,29 +76,23 @@ class AuthController extends Controller
             $mail->SMTPSecure = 'tls';
             $mail->Port = 587;
 
-            // Recipients
             $mail->setFrom(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'));
             $mail->addAddress($email);
 
-            // Content
             $mail->isHTML(true);
             $mail->Subject = 'Email Verification Code';
             $mail->Body = '<h4>Your Email Verification code is ' . $verificationCode . '</h4>';
 
             $mail->send();
 
-            // Hash the generated code using JWT and send it as the response
-            $hashedCode = $this->createToken(['code' => $verificationCode], 300); // Token expires in 5 minutes
-            // Return the response
+            $hashedCode = $this->createToken(['code' => $verificationCode], 300);
             return response()->json([
                 'code' => 'success',
                 'message' => 'Email verification code sent successfully',
                 'verificationCode' => $hashedCode,
-                'generatedToken' => $this->createToken(['email' => $email, 'verificationCode' => $verificationCode], 300), // Token expires in 5 minutes
                 'testCode' => $verificationCode
             ]);
-            
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             Log::error('Error occurred: ' . $e->getMessage());
             return response()->json([
                 'code' => 'error',
@@ -101,8 +100,8 @@ class AuthController extends Controller
                 'reason' => $mail->ErrorInfo
             ]);
         }
-
     }
+
 
     //function to verify the code sent
     public function verifyEmailVerificationCode(Request $request){
@@ -132,7 +131,7 @@ class AuthController extends Controller
                     $decoded = JWT::decode($verificationCodeFromCookie, new Key(env('JWT_SECRET'),'HS256'));
                     $decodedArray = (array)$decoded;
         
-                    if($decodedArray['verificationCode'] == $verificationCode){
+                    if($decodedArray['code'] == $verificationCode){
                         //if the verification code matches, create a new token
                         $payload = ['email' => $email];
                         $createAccountToken = $this->createToken($payload, 20 * 60); // 20 minutes expiration timec
@@ -152,7 +151,7 @@ class AuthController extends Controller
                 }catch(ExpiredException $e){
                     return response()->json([
                         'code' => 'error',
-                        'message' => 'Verification code has expired kindly request a new one',
+                        'message' => 'Verification code has expired. kindly request a new one',
                         'reason' => $e->getMessage()
                     ]);
                 }catch (\Exception $e) {
@@ -183,6 +182,7 @@ class AuthController extends Controller
         // Validate request
         $request->validate([
             'firstname' => 'required|string|max:255',
+            'lastname' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:6',
         ]);
@@ -224,6 +224,7 @@ class AuthController extends Controller
             // Create new user
             $user = User::create([
                 'firstname' => $request->firstname,
+                'lastname' => $request->lastname,
                 'email' => $request->email,
                 'password' => $hashedPassword,
             ]);
@@ -246,7 +247,7 @@ class AuthController extends Controller
             ]);
 
         } catch (\Exception $error) {
-            Log::error('Error occurred: ' . $e->getMessage());
+            Log::error('Error occurred: ' . $error->getMessage());
             return response()->json([
                 'code' => 'error',
                 'message' => 'Account could not be created',
@@ -347,51 +348,97 @@ class AuthController extends Controller
     }
 
 
-    public function getUserOrders(Request $request){
-        try{
-            $email = $request->input('user_email');
-            // return $email;
+    // public function getUserOrders(Request $request){
+    //     try{
+    //         $email = $request->input('user_email');
+    //         // return $email;
 
-            //get the user details using email
-            // $userDetails = User::where('email', $email)->first();
+    //         //get the user details using email
+    //         // $userDetails = User::where('email', $email)->first();
 
-            // $userId = $userDetails->id;
+    //         // $userId = $userDetails->id;
+    //         $userId = $request->user_id;
+
+    //         //use the id obtained to retrieved a list of the user's order
+
+    //         //check if user order exists in cache
+    //         $cachedOrders = Cache::get($userId . '_orders');
+    //         if($cachedOrders){
+    //             return response()->json([
+    //                 "message" => "User order successfully retrieved from cache",
+    //                 "code" => "success",
+    //                 // "data" => $userOrder ? $userOrder :     []
+    //                 "data" => json_decode($cachedOrders)
+    //             ]);
+    //         }
+
+    //         //user order doesn't exist in cache, query the database
+
+    //         $userOrder = Order::where('user_id', $userId)->orderBy('created_at', 'desc')->get();
+            
+    //         //save fetched orders to cache
+    //         Cache::put($userId . '_orders', json_encode($userOrder), 1440); //expiration time of one day
+
+    //         return response()->json([
+    //             "message" => "User order successfully retrieved from database",
+    //             "code" => "success",
+    //             "data" => $userOrder ? $userOrder :     []
+    //         ]);
+    //     }catch(\Exception $e){
+    //         return response()->json([
+    //             "message" => "An error occured while retrieving user's order list",
+    //             "code" => "error",
+    //             "reason" => $e.getMessage()
+    //         ]);
+    //     }
+        
+    // }
+
+
+    public function getUserOrders(Request $request) {
+        try {
             $userId = $request->user_id;
+            $page = (int) $request->query('page', 1);
+            $perPage = (int) $request->query('perPage', 10); // Default perPage = 10
 
-            //use the id obtained to retrieved a list of the user's order
+            $cacheKey = $userId . '_orders';
 
-            //check if user order exists in cache
-            $cachedOrders = Cache::get($userId . '_orders');
-            if($cachedOrders){
-                return response()->json([
-                    "message" => "User order successfully retrieved from cache",
-                    "code" => "success",
-                    // "data" => $userOrder ? $userOrder :     []
-                    "data" => json_decode($cachedOrders)
-                ]);
+            // Check if user's orders exist in cache
+            $cachedOrders = Cache::get($cacheKey);
+
+            if ($cachedOrders) {
+                $ordersCollection = collect(json_decode($cachedOrders)); // Convert to Laravel Collection
+            } else {
+                // Fetch from DB if not cached
+                $ordersCollection = Order::where('user_id', $userId)->orderBy('created_at', 'desc')->get();
+
+                // Store in cache for 1 day
+                Cache::put($cacheKey, json_encode($ordersCollection), 1440); // 1440 minutes = 1 day
             }
 
-            //user order doesn't exist in cache, query the database
-
-            $userOrder = Order::where('user_id', $userId)->orderBy('created_at', 'desc')->get();
-            
-            //save fetched orders to cache
-            Cache::put($userId . '_orders', json_encode($userOrder), 1440); //expiration time of one day
+            // Paginate the collection in memory
+            $paginated = $ordersCollection->slice(($page - 1) * $perPage, $perPage)->values();
 
             return response()->json([
-                "message" => "User order successfully retrieved from database",
+                "message" => $cachedOrders ? "User orders successfully retrieved from cache" : "User orders successfully retrieved from database",
                 "code" => "success",
-                "data" => $userOrder ? $userOrder :     []
+                "data" => [
+                    'data' => $paginated,
+                    'total' => $ordersCollection->count(),
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                ],
             ]);
-        }catch(\Exception $e){
+
+        } catch (\Exception $e) {
             return response()->json([
-                "message" => "An error occured while retrieving user's order list",
+                "message" => "An error occurred while retrieving user's order list",
                 "code" => "error",
-                "reason" => $e.getMessage()
+                "reason" => $e->getMessage() // fixed typo from `$e.getMessage()` to `$e->getMessage()`
             ]);
         }
-        
     }
+
 
     // public function sendFeedback(Request $request){
     //     try{

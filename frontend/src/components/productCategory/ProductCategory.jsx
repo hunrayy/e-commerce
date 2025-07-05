@@ -1,8 +1,10 @@
 
 import useProductCategory from "./useProductCategory";
 import "./productCategory.css";
+import { useNavigate } from "react-router-dom";
 
 const ProductCategory = () => {
+  const navigate = useNavigate()
   const { categories, isLoading, isError } = useProductCategory();
   console.log(categories)
   if (isLoading) return ( 
@@ -24,11 +26,11 @@ const ProductCategory = () => {
         const webpImageUrl = category.image.replace("/upload/", "/upload/f_auto,q_auto/");
         console.log(category)
         return (
-          <div key={index} className="card product-category-wrapper">
+          <div key={index} className="card product-category-wrapper" onClick={() => {navigate(`/collections/all/?category=${category.name}`)}}>
             <img
               src={webpImageUrl}
               className="product-category-wrapper-image"
-              alt={category.label}
+              alt={category.name}
               loading="lazy"
             />
             <div className="product-category-wrapper-text">{category.name}</div>

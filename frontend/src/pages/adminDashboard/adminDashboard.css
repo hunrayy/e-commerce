@@ -2,6 +2,7 @@
 .admin-page-container{
     margin-top: 80px;
     padding: 0 10px;
+    overflow-x: hidden;
 }
 
 .admin-page-sidebar-container{

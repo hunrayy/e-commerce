@@ -32,6 +32,7 @@ const Register = () => {
   const defaultEmail = location.state?.defaultEmail;
   const [formData, setFormData] = useState({
     firstname: '',
+    lastname: '',
     email: defaultEmail,
     password: '',
     confirmPassword: '',
@@ -45,6 +46,9 @@ const Register = () => {
     // Validate firstname
     if (!formData.firstname) {
       errors.firstname = 'Firstname is required';
+    }
+    if (!formData.lastname) {
+      errors.lastname = 'Lastname is required';
     }
 
     // Validate password
@@ -87,7 +91,8 @@ const Register = () => {
         formErrors: {},
     }))
       
-      const feedback = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/createAccount`, { firstname: formData.firstname, lastname: formData.lastname, email: formData.email, password: formData.password},
+    try{
+        const feedback = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/createAccount`, { firstname: formData.firstname, lastname: formData.lastname, email: formData.email, password: formData.password},
         {
             headers: {
                 Authorization: `Bearer ${token}`
@@ -99,12 +104,12 @@ const Register = () => {
         setFormData((prev) => ({
             ...prev,
             firstname: "",
+            lastname: "",
             password: "",
             confirmPassword: ""
         }))
-        setIsLoading(false)
         if(feedback.data.code === "invalid-jwt"){
-            //invalid token...navigate to page not found
+          //invalid token...navigate to page not found
             navigate("/page-not-found", {replace: true})
         }else if(feedback.data.code === "success"){
             setServerSuccessFeedback(true)
@@ -112,9 +117,20 @@ const Register = () => {
             setServerErrorFeedback({
                 status: true,
                 message: feedback.data.message
-            })
-        }
-     }
+              })
+            }
+          }
+        }catch(error){
+          console.log(error)
+          setServerErrorFeedback({
+                status: true,
+                message: error.response.data.message
+              })
+            
+        }finally{
+        setIsLoading(false)
+
+      }
     }
   };
 
@@ -186,6 +202,25 @@ const Register = () => {
                   </div>
                 )}
               </div>
+
+              <div className="form-floating mt-3">
+              <input
+                type="text"
+                placeholder="Lastname"
+                name="lastname"
+                value={formData.lastname}
+                onChange={handleChange}
+                style={{ fontSize: "16px" }}
+                className={`form-control form-control-lg ${formData.formErrors.lastname ? 'is-invalid' : ''}`}
+              />
+              <label>Last name</label>
+              {formData.formErrors.lastname && (
+                <div className="invalid-feedback" style={{ display: "flex", justifyContent: "left" }}>
+                  {formData.formErrors.lastname}
+                </div>
+              )}
+            </div>
+
 
               <div className="form-floating mt-3">
                 <input

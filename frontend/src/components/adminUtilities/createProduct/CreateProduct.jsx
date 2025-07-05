@@ -37,6 +37,7 @@ const CreateProduct = () => {
     const handleCategoryChange = (selectedOption) => {
         setSelectedCategory(selectedOption);
     };
+    const currencyCode = import.meta.env.VITE_CURRENCY_CODE
 
 
     const [isLoading, setIsLoading] = useState(false);
@@ -83,6 +84,8 @@ const CreateProduct = () => {
         e.preventDefault();
         if (isFormValid) {
             setShowModal(true);
+        }else{
+            toast.error('Fields marked with asterisk are important.')
         }
     };
 
@@ -159,9 +162,10 @@ const CreateProduct = () => {
                     setServerSuccessState(true);
                     setTimeout(() => setServerSuccessState(false), 5000);
                 } else {
+                    toast.error(feedback.data.message)
                     setServerErrorMessage({
                         status: true,
-                        message: feedback.data.message
+                        message: `An error occurred while creating product: ${feedback.data.message}`
                     });
                 }
             }
@@ -217,10 +221,11 @@ const CreateProduct = () => {
                 <div className="admin-createPage-form">
                     {serverErrorMessage.status && <div className="alert alert-danger">{serverErrorMessage.message}</div>}
                     {serverSuccessState && <div className="arrow-box">Product successfully created!</div>}
+                    
                     <h2>Create Product</h2>
                     <form onSubmit={handleSubmit}>
                         <div className="mb-3">
-                            <label htmlFor="productImage" className="form-label">Main Product Image</label>
+                            <label htmlFor="productImage" className="form-label">Main Product Image <sup>*</sup></label>
                             <input type="file" className="form-control" id="productImage" onChange={handleInputChange} ref={productImageRef} />
                         </div>
                         {Array.from({ length: 3 }).map((_, index) => (
@@ -230,11 +235,11 @@ const CreateProduct = () => {
                             </div>
                         ))}
                         <div className="mb-3">
-                            <label htmlFor="productName" className="form-label">Product Name</label>
+                            <label htmlFor="productName" className="form-label">Product Name <sup>*</sup></label>
                             <input type="text" className="form-control" id="productName" placeholder="Enter product name" value={formData.productName} onChange={handleInputChange} />
                         </div>
                         <div className="mb-3">
-                            <label htmlFor="productName" className="form-label">Product Category</label>
+                            <label htmlFor="productName" className="form-label">Product Category<sup>*</sup></label>
                             <Select
                                 placeholder="select category"
                                 value={!categories.loading && (selectedCategory)}
@@ -252,7 +257,7 @@ const CreateProduct = () => {
                                 return (
                                     <div key={size} className="mb-3 col-6">
                                         <label htmlFor={`productPrice${size}Inches`} className="form-label">
-                                            Product Price In {import.meta.env.VITE_BASE_CURRENCY} ({size}" inches)
+                                            Product Price In {import.meta.env.VITE_BASE_CURRENCY} ({size}" inches) <sup>*</sup>
                                         </label>
                                         <input
                                             type="text"
@@ -266,7 +271,10 @@ const CreateProduct = () => {
                                 );
                             })}
                         </div>
-                        <button type="submit" className="btn" style={{ background: "purple", borderColor: "purple", color: "white" }} disabled={!isFormValid}>
+                        {/* <button type="submit" className="btn" style={{ background: "purple", borderColor: "purple", color: "white" }} disabled={!isFormValid}>
+                            Show preview
+                        </button> */}
+                         <button type="submit" className="btn" style={{ background: "purple", borderColor: "purple", color: "white" }}>
                             Show preview
                         </button>
                     </form>
@@ -296,7 +304,7 @@ const CreateProduct = () => {
                                 {Object.keys(formData).map((key) => (
                                     key.startsWith("productPrice") && (
                                         <div key={key}>
-                                            <strong>{key.replace("productPrice", "Size")}:</strong> {formatNumberWithCommas(formData[key])}
+                                            <strong>{key.replace("productPrice", "Size")}:</strong> {currencyCode} {formatNumberWithCommas(formData[key])}
                                         </div>
                                     )
                                 ))}

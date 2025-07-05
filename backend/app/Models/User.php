@@ -22,6 +22,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'firstname',
+        'lastname',
         'email',
         'password',
     ];
@@ -41,6 +42,22 @@ class User extends Authenticatable
                 $model->id = (string) Str::uuid();
             });
         }
+
+    // A user can have one admin record (optional)
+    public function admin()
+    {
+        return $this->hasOne(Admin::class);
+    }
+
+    // User model
+    public function roles()
+    {
+        // Assuming 'admin' is the pivot table with 'user_id' and 'role_id'
+        return $this->belongsToMany(Role::class, 'admin', 'user_id', 'role_id')
+                    ->withTimestamps();
+    }
+
+
 
     /**
      * The attributes that should be hidden for serialization.
